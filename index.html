@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0879c9">
-<title>Go Fish Planner v16</title>
+<title>Go Fish Planner v18</title>
 <style>
 :root{--bg:#eef3f7;--card:#fff;--ink:#17212b;--muted:#64748b;--line:#d7e0e7;--blue:#0879c9;--green:#18864b;--amber:#a96000;--red:#b42318;--soft:#edf7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}main{max-width:1180px;margin:auto;padding:18px}
@@ -28,7 +28,7 @@ details summary{cursor:pointer;font-weight:800;color:#075985;margin-top:4px}
 .outlook-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.outlook-day{border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff}.outlook-day strong{display:block;font-size:.88rem}.outlook-score{font-size:1.45rem;font-weight:950;margin:6px 0}.outlook-meta{font-size:.74rem;color:var(--muted);line-height:1.35}.confidence-pill{display:inline-block;padding:3px 7px;border-radius:999px;font-size:.7rem;font-weight:850;margin-top:6px}.conf-high{background:#def7e8;color:#11643a}.conf-med{background:#fff1cc;color:#805000}.conf-low{background:#ffe2df;color:#9b1c14}.outlook-note{padding:10px 12px;border-radius:10px;background:#f4f8fb;color:#334155;font-size:.88rem;margin-top:10px}
 </style></head>
 <body><main>
-<div class="top"><div><h1>Go Fish Planner</h1><p class="sub">Live launch safety, habitat and fishing-window recommendations.</p></div><span class="version">v16 live</span></div>
+<div class="top"><div><h1>Go Fish Planner</h1><p class="sub">Live launch safety, habitat and fishing-window recommendations.</p></div><span class="version">v18 live</span></div>
 
 <div class="tabs">
 <button class="tab active" data-page="ocean">1. Launch Decision</button>
@@ -374,18 +374,55 @@ function renderBait(){
  const night=$('period').value==='night';$('bycatch').textContent=night?'Elevated':'Moderate';$('bycatchReason').textContent=night?'Night bottom fishing increases bat ray, shark and guitarfish encounters. Favor lively bait over dead bait.':'Live bait and active drifting generally reduce scavenger attention compared with soaking dead bait.';
 }
 function renderCoach(){
- const top=dataBundle.ocean[0],fish=bestSpecies(top),night=$('period').value==='night';
- $('coachObjective').textContent=`Target ${fish} from ${top.name}`;$('coachObjectiveReason').textContent=`Launch near ${timeLabel(top.best.h)} and fish ${top.zone}.`;
- $('biteWindow').textContent=`${timeLabel(top.best.h)}–${timeLabel((top.best.h+1)%24)}`;$('biteWindowReason').textContent='Best combined safety and fishing score.';
- $('launchChecklist').innerHTML=[['Forecast and launch visually checked','good'],['PFD, VHF and phone secured','good'],[night?'Navigation lights and return route':'Sun protection and water','warn'],['Net ready before fishing','good'],['Legal measuring device available','good'],['Live bait container not overcrowded','warn']].map(x=>`<div class="check ${x[1]}">${x[0]}</div>`).join('');
+ const usable=dataBundle.ocean.filter(s=>!s.best.hard&&s.best.score>=60);
+ const protectedTop=dataBundle.protected[0];
+ const night=$('period').value==='night';
+ if(!usable.length){
+  $('coachObjective').textContent='NO-GO for exposed ocean launches';
+  $('coachObjectiveReason').textContent='All exposed launch sites are currently below the planner’s usable threshold or have triggered a hard safety override. Do not launch into the open coast.';
+  $('biteWindow').textContent='Use protected water instead';
+  $('biteWindowReason').textContent=protectedTop
+   ?`Best fallback: ${protectedTop.name} near ${timeLabel(protectedTop.best.h)} for ${bestSpecies(protectedTop)}.`
+   :'No protected-water recommendation is available from the current forecast.';
+  $('launchChecklist').innerHTML=[
+   ['Cancel the exposed-ocean launch','bad'],
+   ['Open the Protected-Water Backup tab','good'],
+   [protectedTop?`Use ${protectedTop.name} as the fallback`:'Recheck protected-water forecasts','warn'],
+   ['Keep PFD, VHF and phone requirements','good'],
+   [night?'Use navigation lights and a known return route':'Reassess conditions before departure','warn'],
+   ['Do not override a hard NO-GO because one site has the highest score','bad']
+  ].map(x=>`<div class="check ${x[1]}">${x[0]}</div>`).join('');
+  $('coachSteps').innerHTML=[
+   'Do not launch from any exposed ocean site under the current conditions.',
+   'Open Protected-Water Backup and use the highest-ranked sheltered option.',
+   protectedTop?`Primary fallback: ${protectedTop.name} near ${timeLabel(protectedTop.best.h)}.`:'Wait for protected-water results or choose another day.',
+   'Fish docks, channels, riprap, eelgrass or sand edges appropriate to the protected location.',
+   'Keep the trip conservative and reassess wind locally before launching.',
+   'Return to the seven-day outlook to choose a better exposed-ocean day.'
+  ].map(x=>`<li>${x}</li>`).join('');
+  return;
+ }
+ const top=usable[0],fish=bestSpecies(top);
+ $('coachObjective').textContent=`Target ${fish} from ${top.name}`;
+ $('coachObjectiveReason').textContent=`Launch near ${timeLabel(top.best.h)} and fish ${top.zone}. This is the highest-ranked ocean site that remains above the usable threshold.`;
+ $('biteWindow').textContent=`${timeLabel(top.best.h)}–${timeLabel((top.best.h+1)%24)}`;
+ $('biteWindowReason').textContent='Best combined safety and fishing score among usable exposed launches.';
+ $('launchChecklist').innerHTML=[
+  ['Forecast and launch visually checked','good'],
+  ['PFD, VHF and phone secured','good'],
+  [night?'Navigation lights and return route':'Sun protection and water','warn'],
+  ['Net ready before fishing','good'],
+  ['Legal measuring device available','good'],
+  ['Live bait container not overcrowded','warn']
+ ].map(x=>`<div class="check ${x[1]}">${x[0]}</div>`).join('');
  $('coachSteps').innerHTML=[
- `Launch at ${top.name} near ${timeLabel(top.best.h)} after visually checking conditions.`,
- 'Catch lively local bait with a small-hook Sabiki before beginning the halibut drift.',
- `Move to ${top.zone} and locate a sand-to-structure transition.`,
- 'Use only enough sliding weight to maintain occasional bottom contact.',
- night?'Slow-troll or drift very quietly in 5–15 feet first.':'Make controlled drifts across 10–30 feet, adjusting to bait and structure.',
- 'Mark bites and repeat the exact drift line. Move after 20–30 minutes without signs of life.',
- 'Let the rod load before applying steady pressure, then have the net positioned before the fish reaches the surface.'
+  `Launch at ${top.name} near ${timeLabel(top.best.h)} after visually checking conditions.`,
+  'Catch lively local bait with a small-hook Sabiki before beginning the halibut drift.',
+  `Move to ${top.zone} and locate a sand-to-structure transition.`,
+  'Use only enough sliding weight to maintain occasional bottom contact.',
+  night?'Slow-troll or drift very quietly in 5–15 feet first.':'Make controlled drifts across 10–30 feet, adjusting to bait and structure.',
+  'Mark bites and repeat the exact drift line. Move after 20–30 minutes without signs of life.',
+  'Let the rod load before applying steady pressure, then have the net positioned before the fish reaches the surface.'
  ].map(x=>`<li>${x}</li>`).join('');
 }
 
