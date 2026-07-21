@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0879c9">
+<title>Go Fish Planner v16</title>
+<style>
+:root{--bg:#eef3f7;--card:#fff;--ink:#17212b;--muted:#64748b;--line:#d7e0e7;--blue:#0879c9;--green:#18864b;--amber:#a96000;--red:#b42318;--soft:#edf7ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}main{max-width:1180px;margin:auto;padding:18px}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}h1{font-size:1.65rem;margin:0}.sub{color:var(--muted);margin:.3rem 0 0}.version{background:#dff1ff;color:#075985;padding:6px 10px;border-radius:999px;font-weight:800}
+.tabs{display:flex;gap:8px;margin:18px 0 12px;flex-wrap:wrap}.tab,.btn{border:1px solid var(--line);background:#fff;padding:10px 14px;border-radius:9px;font-weight:750;cursor:pointer}.tab.active,.btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn:disabled{opacity:.55;cursor:not-allowed}
+.card,.banner{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}.banner{background:linear-gradient(135deg,#e7f6ff,#f7fbff);border-color:#abd7f5}
+.controls{display:grid;grid-template-columns:repeat(5,minmax(135px,1fr));gap:12px}.control label{display:block;font-size:.82rem;font-weight:750;margin-bottom:5px}.control select{width:100%;padding:9px;border:1px solid #bbc7d1;border-radius:8px;background:#fff;font-size:1rem}.date-wrap{width:100%;padding:8px;border:1px solid #bbc7d1;border-radius:8px;background:#fff}.date-wrap input{display:block;width:100%;min-width:0;border:0;background:transparent;padding:0;font-size:1rem}
+.mode-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mode-btn{border:2px solid var(--line);background:#fff;border-radius:11px;padding:11px;text-align:left;cursor:pointer}.mode-btn strong{display:block;font-size:1rem}.mode-btn span{display:block;color:var(--muted);font-size:.76rem;margin-top:3px}.mode-btn.active{border-color:var(--blue);background:#eaf6ff;box-shadow:0 0 0 2px #c9e8ff inset}.mode-note{margin-top:10px;padding:10px 12px;border-radius:10px;background:#f4f8fb;color:#334155;font-size:.88rem}.statusline{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}.note{font-size:.86rem;color:var(--muted)}.error{color:var(--red);font-weight:700}
+.reco-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.decision{border:1px solid var(--line);border-radius:12px;padding:15px;background:#fbfdff}.eyebrow{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800}.big{font-size:1.4rem;font-weight:850;margin:6px 0}.status{display:inline-block;padding:5px 9px;border-radius:999px;font-size:.78rem;font-weight:900}.go{background:#def7e8;color:#11643a}.caution{background:#fff1cc;color:#805000}.nogo{background:#ffe2df;color:#9b1c14}.reason{color:var(--muted);line-height:1.45}.callout{font-size:1.08rem;font-weight:780}.callout small{display:block;color:var(--muted);font-weight:500;margin-top:5px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.metric{background:#f5f8fa;border-radius:9px;padding:9px}.metric b{display:block;font-size:1.02rem}.metric span{font-size:.75rem;color:var(--muted)}
+.day-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.day-btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;font-weight:750;cursor:pointer}.day-btn.active{background:#173b57;color:#fff;border-color:#173b57}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid var(--line);padding:10px 8px;vertical-align:top}th{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.score{font-weight:900}.bar{height:8px;background:#e7edf2;border-radius:20px;overflow:hidden;margin-top:5px}.fill{height:100%;background:var(--blue)}.hidden{display:none}.hour-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.hour-card{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}.hour-card b{display:block}.source{font-size:.78rem;color:var(--muted);margin-top:12px}.habitat{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:999px;background:#e8f4ff;color:#075985;font-size:.75rem;font-weight:750}.confidence{font-size:2rem;font-weight:900;line-height:1}.strategy-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.strategy-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}.strategy-card h3{margin:.2rem 0 .5rem}.rank-list{margin:.5rem 0 0;padding-left:1.2rem}.rank-list li{margin:.35rem 0}.coach-list{counter-reset:step;list-style:none;padding:0;margin:0}.coach-list li{counter-increment:step;position:relative;padding:12px 12px 12px 48px;border-bottom:1px solid var(--line)}.coach-list li:last-child{border-bottom:0}.coach-list li:before{content:counter(step);position:absolute;left:10px;top:10px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:white;font-weight:900}.check-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.check{padding:10px;border-radius:9px;background:#f5f8fa;font-size:.84rem}.good{border-left:4px solid var(--green)}.warn{border-left:4px solid var(--amber)}.bad{border-left:4px solid var(--red)}
+details summary{cursor:pointer;font-weight:800;color:#075985;margin-top:4px}
+.weekly{margin-bottom:14px}.week-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px}.week-day{border:2px solid transparent;border-radius:11px;padding:10px 8px;text-align:center;cursor:pointer;color:#17212b;min-height:112px}.week-day:hover{filter:brightness(.98)}.week-day.selected{border-color:#0879c9;box-shadow:0 0 0 2px #c9e8ff inset}.week-day .dow{font-size:.76rem;font-weight:850;text-transform:uppercase;letter-spacing:.04em}.week-day .date{font-size:.78rem;margin-top:2px}.week-day .week-score{font-size:1.45rem;font-weight:950;margin:7px 0 2px}.week-day .week-label{font-size:.72rem;font-weight:850}.week-day .week-detail{font-size:.68rem;margin-top:5px;line-height:1.25}.week-loading{padding:14px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
+@media(max-width:950px){.outlook-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.week-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:950px){.controls{grid-template-columns:repeat(2,1fr)}.mode-buttons{grid-template-columns:1fr}.reco-grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.hour-grid{grid-template-columns:1fr}.strategy-grid{grid-template-columns:1fr}.check-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.week-grid{grid-template-columns:repeat(2,1fr)}main{padding:12px}.controls{grid-template-columns:1fr}.tabs{display:grid;grid-template-columns:1fr}.check-grid{grid-template-columns:1fr}.card,.banner{padding:13px}table{font-size:.86rem}}
+
+/* Opportunity Outlook tab only */
+.outlook-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.outlook-day{border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff}.outlook-day strong{display:block;font-size:.88rem}.outlook-score{font-size:1.45rem;font-weight:950;margin:6px 0}.outlook-meta{font-size:.74rem;color:var(--muted);line-height:1.35}.confidence-pill{display:inline-block;padding:3px 7px;border-radius:999px;font-size:.7rem;font-weight:850;margin-top:6px}.conf-high{background:#def7e8;color:#11643a}.conf-med{background:#fff1cc;color:#805000}.conf-low{background:#ffe2df;color:#9b1c14}.outlook-note{padding:10px 12px;border-radius:10px;background:#f4f8fb;color:#334155;font-size:.88rem;margin-top:10px}
+</style></head>
+<body><main>
+<div class="top"><div><h1>Go Fish Planner</h1><p class="sub">Live launch safety, habitat and fishing-window recommendations.</p></div><span class="version">v16 live</span></div>
+
+<div class="tabs">
+<button class="tab active" data-page="ocean">1. Launch Decision</button>
+<button class="tab" data-page="species">2. Species Recommendations</button>
+<button class="tab" data-page="coach">3. Coach Mode</button>
+<button class="tab" data-page="bait">4. Bait Intelligence</button>
+<button class="tab" data-page="outlook">5. Opportunity Outlook</button>
+<button class="tab" data-page="protected">Protected-Water Backup</button>
+</div>
+
+<section class="card weekly">
+<div class="week-head">
+<div><div class="eyebrow">Seven-day coast-wide outlook</div><h2 style="margin:.25rem 0">Best day to fish</h2><p class="reason" style="margin:.25rem 0">Aggregates all exposed ocean launches. Click a day to load its detailed launch ranking and Coach Mode.</p></div>
+<div><span class="status go">Green = broadly favorable</span></div>
+</div>
+<div id="weekGrid" class="week-grid"><div class="week-loading" style="grid-column:1/-1">Loading seven-day outlook…</div></div>
+<p id="weekState" class="note" aria-live="polite"></p>
+</section>
+
+<section class="card">
+<h2 style="margin-top:0">Plan a future fishing day</h2>
+<div class="controls">
+<div class="control"><label for="startDate">Starting date</label><div class="date-wrap"><input id="startDate" type="date"></div></div>
+<div class="control" style="grid-column:span 2"><label>Choose your trip mode</label>
+<div class="mode-buttons">
+<button type="button" class="mode-btn active" data-mode="first"><strong>First Fish</strong><span>Highest-probability catch and easy ocean access</span></button>
+<button type="button" class="mode-btn" data-mode="yellowtail"><strong>Yellowtail Hunt</strong><span>Ocean access, kelp/reef edges, bait and warm water</span></button>
+</div></div>
+<div class="control"><label for="target">Target species</label><select id="target"><option value="best">Best available</option><option value="halibut">Halibut</option><option value="spotted">Spotted bay bass</option><option value="calico">Calico bass</option><option value="sand">Sand bass</option><option value="yellowtail">Yellowtail</option></select></div>
+<div class="control"><label for="platform">Platform</label><select id="platform"><option value="hobie">Hobie i12S — conservative</option><option value="catalina">Catalina RIB</option></select></div>
+<div class="control"><label for="period">Day / night</label><select id="period"><option value="day">Day strategy</option><option value="night">Night strategy</option></select></div>
+<div class="control"><label for="hours">Fishing window</label><select id="hours"><option value="6,12">6 AM–Noon</option><option value="12,18">Noon–6 PM</option><option value="18,24">6 PM–Midnight</option><option value="0,6">Midnight–6 AM</option></select></div>
+</div>
+<div id="modeNote" class="mode-note"></div>
+<div class="statusline"><span class="note">Checks every forecast hour using wind, waves, tide timing, water temperature, habitat and day/night strategy.</span><button id="refresh" class="btn primary">Refresh live forecasts</button></div>
+<p id="loadState" class="note" aria-live="polite"></p>
+</section>
+
+<div id="ocean-page">
+<section class="banner"><h2 style="margin-top:0">Two-part recommendation</h2><div class="reco-grid">
+<div class="decision"><div class="eyebrow">Decision 1 · Launch</div><div class="big" id="accessName">Loading…</div><div id="accessStatus"></div><p class="reason" id="accessReason"></p><div class="metrics" id="accessMetrics"></div></div>
+<div class="decision"><div class="eyebrow">Decision 2 · Where to fish</div><div class="big" id="fishName">—</div><div class="callout" id="fishTarget"></div><p class="reason" id="fishReason"></p></div>
+</div></section>
+<section class="card"><h2 style="margin-top:0">Ocean-access ranking</h2><p class="note">Protected-water locations are excluded here. Ocean scoring uses v8’s exposure-adjusted surf estimate, wave period, wind direction and hard NO-GO limits.</p><div style="overflow-x:auto"><table><thead><tr><th>Rank</th><th>Access and time</th><th>Verdict</th><th>Launch conditions</th><th>Fishing recommendation</th><th>Score</th></tr></thead><tbody id="oceanRows"></tbody></table></div></section>
+</div>
+
+<div id="species-page" class="hidden">
+<section class="banner"><div class="eyebrow">Separate fishing decision</div><h2 style="margin:.35rem 0">What should I target today?</h2><p class="reason">Ranks species independently from launch safety.</p><div class="reco-grid">
+<div class="decision"><div class="eyebrow">Best overall target</div><div class="big" id="speciesTop">Loading…</div><p class="reason" id="speciesTopReason"></p></div>
+<div class="decision"><div class="eyebrow">Best structure to fish</div><div class="big" id="structureTop">—</div><p class="reason" id="structureTopReason"></p></div>
+</div></section>
+<section class="card"><h2 style="margin-top:0">Species ranking</h2><div id="speciesCards" class="hour-grid"></div></section>
+<section class="card"><h2 style="margin-top:0">Best locations by species</h2><div style="overflow-x:auto"><table><thead><tr><th>Species</th><th>Best area</th><th>Best time</th><th>Water and tide</th><th>Recommended structure</th></tr></thead><tbody id="speciesRows"></tbody></table></div></section>
+</div>
+
+<div id="coach-page" class="hidden">
+<section class="banner"><div class="eyebrow">Guide-style fishing plan</div><h2 style="margin:.35rem 0">Coach Mode</h2><div class="reco-grid">
+<div class="decision"><div class="eyebrow">Today's objective</div><div class="big" id="coachObjective">Loading…</div><p class="reason" id="coachObjectiveReason"></p><p class="note">Calculated from the current highest-ranked safe ocean site; it is not a fixed location.</p></div>
+<div class="decision"><div class="eyebrow">Best bite window</div><div class="big" id="biteWindow">—</div><p class="reason" id="biteWindowReason"></p></div>
+</div></section>
+<section class="card"><h2 style="margin-top:0">Launch checklist</h2><div id="launchChecklist" class="check-grid"></div></section>
+<section class="card"><h2 style="margin-top:0">Step-by-step game plan</h2><ol id="coachSteps" class="coach-list"></ol></section>
+</div>
+
+<div id="bait-page" class="hidden">
+<section class="banner"><div class="eyebrow">Local forage strategy</div><h2 style="margin:.35rem 0">Bait Intelligence</h2><p class="reason">Ranks likely bait from location, habitat, water temperature, target and day/night strategy.</p><div class="reco-grid">
+<div class="decision"><div class="eyebrow">Primary bait</div><div class="big" id="primaryBait">—</div><p class="reason" id="primaryBaitWhy"></p><p class="note">Uses the current top safe ocean result and updates whenever planning controls change.</p></div>
+<div class="decision"><div class="eyebrow">Backup bait</div><div class="big" id="backupBait">—</div><p class="reason" id="backupBaitWhy"></p></div>
+</div></section>
+<section class="card"><h2 style="margin-top:0">Ranked bait choices</h2><ol id="baitRows" class="rank-list"></ol></section>
+<section class="card"><div class="strategy-grid">
+<div class="strategy-card"><div class="eyebrow">Sabiki plan</div><h3 id="sabikiPlan">—</h3><p class="reason" id="sabikiReason"></p></div>
+<div class="strategy-card"><div class="eyebrow">Hook and rig</div><h3 id="hookPlan">—</h3><p class="reason" id="hookReason"></p></div>
+<div class="strategy-card"><div class="eyebrow">Shark/ray bycatch</div><h3 id="bycatch">—</h3><p class="reason" id="bycatchReason"></p></div>
+<div class="strategy-card"><div class="eyebrow">Move rule</div><h3>20–30 minutes</h3><p class="reason">No bait, bites or useful bottom change: move to a different edge, depth or current line.</p></div>
+</div></section>
+</div>
+
+<div id="outlook-page" class="hidden">
+<section class="banner"><div class="eyebrow">Long-range planning</div><h2 style="margin:.35rem 0">16-Day Opportunity Outlook</h2><p class="reason">A separate planning view using fresh Open-Meteo weather and marine forecasts. It does not feed into or alter Launch Decision, Coach Mode, species, bait, protected-water, or seven-day scoring.</p></section>
+<section class="card"><div class="statusline"><div><h2 style="margin:0">Potential fishing windows</h2><p class="note" style="margin:.35rem 0 0">Days 1–3 are most dependable, days 4–7 are planning guidance, and days 8–16 are trend-only.</p></div><button id="refreshOutlook" class="btn primary">Refresh outlook</button></div><div id="outlookGrid" class="outlook-grid"><div class="week-loading" style="grid-column:1/-1">Open this tab to load the live outlook…</div></div><p id="outlookState" class="note" aria-live="polite"></p></section>
+<section class="card"><h2 style="margin-top:0">Important</h2><div class="outlook-note">This tab has its own independent trend score. Final launch decisions must still come from the existing Launch Decision tab, same-day observations, surf cameras, advisories, and your visual inspection at the launch.</div></section>
+</div>
+
+<div id="protected-page" class="hidden">
+<section class="banner"><h2 style="margin-top:0">Best protected-water fallback</h2><div class="callout" id="protectedTop">Loading…</div><p class="reason" id="protectedReason"></p></section>
+<section class="card"><h2 style="margin-top:0">Protected-water fishing ranking</h2><p class="note">These locations are intentionally excluded from Launch Decision.</p><div style="overflow-x:auto"><table><thead><tr><th>Rank</th><th>Site and time</th><th>Target</th><th>Conditions and habitat</th><th>Score</th></tr></thead><tbody id="protectedRows"></tbody></table></div></section>
+</div>
+
+<p class="source">Forecast sources: Open-Meteo Weather and Marine APIs; NOAA CO-OPS tide predictions. Check current regulations, MPAs, advisories, surf cameras and conditions at the launch.</p>
+
+<script>
+const oceanSites=[
+{name:'Alamitos Bay Entrance',shoreBearing:210,lat:33.7488,lon:-118.1250,tide:'9410660',zone:'Belmont sand flats / outside breakwall',shelter:3,exposure:5,habitats:['sand','breakwall'],halibut:9,spotted:1,calico:5,sand:7,yellowtail:2,easy:8},
+{name:'Seal Beach Nearshore',shoreBearing:210,lat:33.7350,lon:-118.1095,tide:'9410660',zone:'Pier-adjacent sand and troughs',shelter:1,exposure:9,habitats:['sand','pier'],halibut:8,spotted:1,calico:3,sand:6,yellowtail:2,easy:4},
+{name:'Bolsa Chica / Sunset Beach',shoreBearing:220,lat:33.7168,lon:-118.0695,tide:'9410660',zone:'Nearshore sand and hard-bottom edges',shelter:1,exposure:10,habitats:['sand','reef'],halibut:7,spotted:0,calico:4,sand:6,yellowtail:3,easy:3},
+{name:'Huntington Beach Nearshore',shoreBearing:220,lat:33.6555,lon:-118.0130,tide:'9410660',zone:'Sand flats near pier corridor',shelter:0,exposure:10,habitats:['sand','pier'],halibut:7,spotted:0,calico:2,sand:6,yellowtail:2,easy:2},
+{name:'Newport Harbor Entrance',shoreBearing:210,lat:33.5984,lon:-117.8838,tide:'9410580',zone:'Corona del Mar kelp edge / outside jetty',shelter:4,exposure:6,habitats:['kelp','reef','jetty','sand'],halibut:8,spotted:2,calico:9,sand:7,yellowtail:7,easy:7},
+{name:'Crystal Cove',shoreBearing:225,lat:33.5667,lon:-117.8338,tide:'9410580',zone:'Reef and kelp beds',shelter:1,exposure:9,habitats:['kelp','reef'],halibut:5,spotted:0,calico:10,sand:4,yellowtail:8,easy:2},
+{name:'Dana Point Harbor Entrance',shoreBearing:190,lat:33.4538,lon:-117.6966,tide:'9410580',zone:'East jetty sand / outside kelp edge',shelter:5,exposure:5,habitats:['kelp','reef','jetty','sand'],halibut:9,spotted:2,calico:8,sand:8,yellowtail:8,easy:9},
+{name:'Doheny Nearshore',shoreBearing:195,lat:33.4621,lon:-117.6840,tide:'9410580',zone:'Sand flats south of harbor',shelter:3,exposure:7,habitats:['sand','reef'],halibut:8,spotted:0,calico:4,sand:7,yellowtail:4,easy:5},
+{name:'Capistrano Beach',shoreBearing:200,lat:33.4550,lon:-117.6665,tide:'9410580',zone:'Nearshore sand and scattered reef',shelter:1,exposure:9,habitats:['sand','reef'],halibut:7,spotted:0,calico:5,sand:6,yellowtail:4,easy:3},
+{name:'San Clemente North Beach',shoreBearing:210,lat:33.4328,lon:-117.6340,tide:'9410580',zone:'Nearshore sand / pier corridor',shelter:1,exposure:9,habitats:['sand','pier','reef'],halibut:7,spotted:0,calico:5,sand:6,yellowtail:4,easy:3},
+{name:'T-Street / Calafia',shoreBearing:215,lat:33.4120,lon:-117.6168,tide:'9410580',zone:'Reef and kelp edges',shelter:0,exposure:10,habitats:['kelp','reef'],halibut:4,spotted:0,calico:10,sand:4,yellowtail:8,easy:1}
+];
+const protectedSites=[
+{name:'Dana Cove',lat:33.4595,lon:-117.7045,tide:'9410580',shelter:10,habitats:['sand','docks','riprap'],halibut:8,spotted:9,calico:4,sand:6,yellowtail:0,easy:10,notes:'Protected basin with sand, docks and rock edges.'},
+{name:'Newport Harbor Channels',lat:33.6135,lon:-117.9005,tide:'9410580',shelter:9,habitats:['docks','eelgrass','channels','sand'],halibut:9,spotted:9,calico:3,sand:7,yellowtail:0,easy:8,notes:'Docks, eelgrass and channels.'},
+{name:'Huntington Harbour Channels',lat:33.7200,lon:-118.0570,tide:'9410660',shelter:10,habitats:['docks','eelgrass','channels'],halibut:6,spotted:10,calico:2,sand:5,yellowtail:0,easy:9,notes:'Highly protected docks, channels and eelgrass edges.'},
+{name:'Alamitos Bay / Naples',lat:33.7608,lon:-118.1190,tide:'9410660',shelter:10,habitats:['docks','channels','sand','eelgrass'],halibut:7,spotted:9,calico:2,sand:5,yellowtail:0,easy:9,notes:'Channels, docks and sand flats.'},
+{name:'Marine Stadium',lat:33.7590,lon:-118.1515,tide:'9410660',shelter:10,habitats:['riprap','sand'],halibut:5,spotted:8,calico:1,sand:4,yellowtail:0,easy:10,notes:'Very sheltered light-tackle area.'},
+{name:'Dana Point Harbor Interior',lat:33.4620,lon:-117.6978,tide:'9410580',shelter:10,habitats:['docks','riprap','sand'],halibut:7,spotted:8,calico:3,sand:7,yellowtail:0,easy:9,notes:'Docks, riprap and basin edges.'},
+{name:'Mother’s Beach / Naples Canals',lat:33.7560,lon:-118.1280,tide:'9410660',shelter:10,habitats:['docks','channels'],halibut:4,spotted:8,calico:1,sand:3,yellowtail:0,easy:10,notes:'Extremely protected; tide matters most.'}
+];
+
+const $=id=>document.getElementById(id);
+let mode='first', dataBundle=null, weekBundle=null, weekLoading=false;
+const clamp=n=>Math.max(0,Math.min(100,Math.round(n)));
+function fmtDate(d){return d.toLocaleDateString('en-CA')}
+function timeLabel(h){const a=h%12||12;return a+(h<12?' AM':' PM')}
+function verdict(score,hard=false){if(hard)return ['NO-GO','nogo'];return score>=80?['GO','go']:score>=60?['CAUTION','caution']:['NO-GO','nogo']}
+function angleDiff(a,b){let d=Math.abs(a-b)%360;return d>180?360-d:d}
+function compass(d){return ['N','NE','E','SE','S','SW','W','NW'][Math.round((d||0)/45)%8]}
+function bestSpecies(site){
+ const t=$('target').value;
+ if(mode==='yellowtail')return 'Yellowtail';
+ if(t!=='best')return t==='spotted'?'Spotted bay bass':t[0].toUpperCase()+t.slice(1)+' bass'.replace('Halibut bass','Halibut').replace('Yellowtail bass','Yellowtail');
+ return Object.entries({Halibut:site.halibut,'Spotted bay bass':site.spotted,'Calico bass':site.calico,'Sand bass':site.sand,Yellowtail:site.yellowtail}).sort((a,b)=>b[1]-a[1])[0][0];
+}
+function speciesValue(site,key){return site[key]||0}
+function setModeText(){
+ document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+ $('modeNote').textContent=$('period').value==='night'
+ ?'Night strategy favors shallower halibut water, slower movement and raises shark/ray bycatch risk. Navigation lights and a known return route are required.'
+ :mode==='yellowtail'
+ ?'Yellowtail Hunt prioritizes safe ocean access, warmer water and kelp/reef edges.'
+ :'First Fish prioritizes easy ocean access, moving water and high-probability habitat.';
+}
+async function fetchData(site,date,endDateOverride=null){
+ const end=new Date(date+'T12:00:00');end.setDate(end.getDate()+1);const endDate=endDateOverride||fmtDate(end);
+ const weather=`https://api.open-meteo.com/v1/forecast?latitude=${site.lat}&longitude=${site.lon}&hourly=wind_speed_10m,wind_gusts_10m,wind_direction_10m,visibility,precipitation_probability&wind_speed_unit=mph&timezone=America%2FLos_Angeles&start_date=${date}&end_date=${endDate}`;
+ const marine=`https://marine-api.open-meteo.com/v1/marine?latitude=${site.lat}&longitude=${site.lon}&hourly=wave_height,wave_period,sea_surface_temperature&length_unit=imperial&temperature_unit=fahrenheit&timezone=America%2FLos_Angeles&start_date=${date}&end_date=${endDate}`;
+ const tide=`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=GoFishPlanner&begin_date=${date.replaceAll('-','')}&end_date=${endDate.replaceAll('-','')}&datum=MLLW&station=${site.tide}&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
+ const [wr,mr,tr]=await Promise.all([fetch(weather),fetch(marine),fetch(tide)]);
+ if(!wr.ok||!mr.ok||!tr.ok)throw new Error('A forecast service did not respond.');
+ return [await wr.json(),await mr.json(),(await tr.json()).predictions||[]];
+}
+function tideAt(preds,iso){
+ const ms=new Date(iso).getTime();let before=preds[0],after=preds.at(-1);
+ for(const p of preds){const x=new Date(p.t.replace(' ','T')).getTime();if(x<=ms)before=p;if(x>ms){after=p;break}}
+ const bm=new Date(before.t.replace(' ','T')).getTime(),am=new Date(after.t.replace(' ','T')).getTime();
+ return {stage:after.type==='H'?'rising':'falling',movement:Math.abs(+after.v-(+before.v))/Math.max(.5,(am-bm)/36e5)};
+}
+function scoreSite(site,w,m,preds,date,isProtected){
+ const [start,end]=$('hours').value.split(',').map(Number),periodMode=$('period').value;
+ const hours=[];for(let h=start;h<end;h++)hours.push(h%24);
+ return hours.map(h=>{
+  const iso=date+'T'+String(h).padStart(2,'0')+':00',wi=w.hourly.time.indexOf(iso),mi=m.hourly.time.indexOf(iso);
+  if(wi<0||mi<0)return null;
+  const wind=w.hourly.wind_speed_10m[wi]||0,gust=w.hourly.wind_gusts_10m[wi]||0;
+  const dir=w.hourly.wind_direction_10m?.[wi]||0;
+  const wave=m.hourly.wave_height?.[mi]||0,period=m.hourly.wave_period?.[mi]||0,temp=m.hourly.sea_surface_temperature?.[mi]||null;
+  const tide=tideAt(preds,iso);
+  if(isProtected){
+   let score=62+site.shelter*2+(Math.max(site.halibut||0,site.spotted||0,site.calico||0,site.sand||0)-5)*3;
+   if(h<=8||h>=17)score+=4;if(wind>20)score-=3;if(gust>28)score-=3;
+   if(mode==='first')score+=(site.easy-5)*2.5;
+   if(mode==='yellowtail')score=25+site.shelter;
+   return {h,wind,gust,dir,wave,period,surf:0,temp,tide,windRelation:'protected',hard:false,score:clamp(score)};
+  }
+  const travel=(dir+180)%360,offshore=site.shoreBearing||210,diff=angleDiff(travel,offshore);
+  const windRelation=diff<=45?'offshore':diff>=135?'onshore':'cross-shore';
+  const surf=wave*(0.55+(site.exposure||2)/12)*(period>=14?1.15:period>=10?1.05:1);
+  const platform=$('platform').value;
+  const windLimit=platform==='hobie'?8:12,gustLimit=platform==='hobie'?14:20,surfLimit=platform==='hobie'?1.8:2.8;
+  let score=100,hard=false;
+  score-=Math.max(0,wind-windLimit)*(2.9+site.exposure*.14);
+  score-=Math.max(0,gust-gustLimit)*1.35;
+  score-=Math.max(0,surf-surfLimit)*(13+site.exposure*.8);
+  if(period>=14&&surf>1.4)score-=8;
+  if(windRelation==='offshore')score-=wind*(platform==='hobie'?1.15:.55);
+  if(windRelation==='onshore')score-=Math.max(0,wind-5)*.75+Math.max(0,surf-1)*5;
+  if(windRelation==='cross-shore')score-=Math.max(0,wind-8)*.45;
+  if(tide.movement<.10)score-=mode==='first'?10:5;
+  else if(tide.movement>.22&&tide.movement<.65)score+=mode==='first'?7:4;
+  if(site.name.includes('Entrance')&&tide.stage==='falling')score-=7;
+  if(site.name.includes('Entrance')&&tide.movement>.70)score-=8;
+  if(h<=7)score+=mode==='yellowtail'?8:4;if(h>=13)score-=mode==='yellowtail'?9:5;
+  score+=site.shelter*1.4;
+  const key=$('target').value==='best'?'halibut':$('target').value;
+  score+=((site[key]||0)-5)*(mode==='yellowtail'?2.2:1.15);
+  if(mode==='first')score+=(site.easy-5)*2.2;
+  if(mode==='yellowtail'&&!site.habitats.includes('kelp')&&!site.habitats.includes('reef'))score-=12;
+  if(periodMode==='night'&&site.habitats.includes('sand'))score+=2;
+  if(platform==='hobie'&&(surf>3||wind>15||gust>22))hard=true;
+  if(platform==='catalina'&&(surf>4.5||wind>20||gust>30))hard=true;
+  score=clamp(score);
+  if(hard)score=Math.min(score,39);
+  return {h,wind,gust,dir,wave,period,surf,temp,tide,windRelation,hard,score};
+ }).filter(Boolean).sort((a,b)=>{
+   if(a.hard!==b.hard)return a.hard?1:-1;
+   return b.score-a.score;
+ });
+}
+
+function weekColor(score){
+ const hue=Math.max(0,Math.min(120,(score-25)*120/65));
+ return `hsl(${hue} 72% 86%)`;
+}
+function weekLabel(score){
+ return score>=78?'GREEN':score>=58?'YELLOW':'RED';
+}
+function aggregateDay(siteResults){
+ const usable=siteResults.filter(s=>!s.best.hard);
+ const noGoCount=siteResults.length-usable.length;
+ const bestScores=usable.map(s=>s.best.score).sort((a,b)=>b-a);
+ const topAverage=bestScores.length?bestScores.slice(0,Math.min(4,bestScores.length)).reduce((a,b)=>a+b,0)/Math.min(4,bestScores.length):20;
+ const median=bestScores.length?bestScores[Math.floor(bestScores.length/2)]:15;
+ const broadCoverage=usable.length/siteResults.length;
+ let score=topAverage*.52+median*.23+broadCoverage*25-noGoCount*1.4;
+ if(usable.length===0)score=15;
+ score=clamp(score);
+ const bestSite=siteResults.slice().sort((a,b)=>{
+  if(a.best.hard!==b.best.hard)return a.best.hard?1:-1;
+  return b.best.score-a.best.score;
+ })[0];
+ return {score,noGoCount,usableCount:usable.length,bestSite};
+}
+async function loadWeekOutlook(){
+ if(weekLoading)return;
+ weekLoading=true;
+ $('weekState').textContent='Calculating coast-wide conditions for seven days…';
+ $('weekGrid').innerHTML='<div class="week-loading" style="grid-column:1/-1">Loading weather, marine and tide forecasts for all exposed launches…</div>';
+ try{
+  const start=new Date();start.setHours(12,0,0,0);
+  const end=new Date(start);end.setDate(end.getDate()+6);
+  const startDate=fmtDate(start),endDate=fmtDate(end);
+  const raw=[];
+  for(const s of oceanSites){
+   const [w,m,t]=await fetchData(s,startDate,endDate);
+   raw.push({site:s,w,m,t});
+  }
+  const days=[];
+  for(let i=0;i<7;i++){
+   const d=new Date(start);d.setDate(start.getDate()+i);const date=fmtDate(d);
+   const siteResults=raw.map(r=>{
+    const hours=scoreSite(r.site,r.w,r.m,r.t,date,false);
+    return {...r.site,hours,best:hours[0]};
+   });
+   days.push({date,dateObj:new Date(date+'T12:00:00'),...aggregateDay(siteResults)});
+  }
+  weekBundle=days;
+  renderWeek();
+  $('weekState').textContent='Weekly colors are relative safety-and-usability scores across all exposed launch sites.';
+ }catch(e){
+  $('weekGrid').innerHTML='<div class="week-loading" style="grid-column:1/-1">Seven-day outlook unavailable.</div>';
+  $('weekState').innerHTML='<span class="error">'+e.message+'</span>';
+ }finally{weekLoading=false}
+}
+function renderWeek(){
+ if(!weekBundle)return;
+ const selected=$('startDate').value;
+ $('weekGrid').innerHTML=weekBundle.map(d=>{
+  const dow=d.dateObj.toLocaleDateString([],{weekday:'short'});
+  const md=d.dateObj.toLocaleDateString([],{month:'short',day:'numeric'});
+  const best=d.bestSite;
+  return `<button type="button" class="week-day ${selected===d.date?'selected':''}" data-week-date="${d.date}" style="background:${weekColor(d.score)}">
+   <div class="dow">${dow}</div><div class="date">${md}</div>
+   <div class="week-score">${d.score}</div><div class="week-label">${weekLabel(d.score)}</div>
+   <div class="week-detail">${d.usableCount}/${oceanSites.length} usable<br>${best.name}</div>
+  </button>`;
+ }).join('');
+ document.querySelectorAll('[data-week-date]').forEach(b=>b.addEventListener('click',()=>{
+  $('startDate').value=b.dataset.weekDate;
+  renderWeek();
+  run();
+ }));
+}
+
+async function run(){
+ $('refresh').disabled=true;$('loadState').textContent='Loading ocean and protected-water forecasts…';
+ try{
+  const date=$('startDate').value,all=[...oceanSites.map(s=>({...s,protected:false})),...protectedSites.map(s=>({...s,protected:true}))];
+  const results=[];
+  for(const s of all){const [w,m,t]=await fetchData(s,date);const hours=scoreSite(s,w,m,t,date,s.protected);results.push({...s,hours,best:hours[0]})}
+  dataBundle={
+   ocean:results.filter(x=>!x.protected).sort((a,b)=>{if(a.best.hard!==b.best.hard)return a.best.hard?1:-1;return b.best.score-a.best.score}),
+   protected:results.filter(x=>x.protected).sort((a,b)=>b.best.score-a.best.score)
+  };
+  renderAll();renderWeek();$('loadState').textContent='Live forecasts loaded.';
+ }catch(e){$('loadState').innerHTML='<span class="error">'+e.message+'</span>'}
+ finally{$('refresh').disabled=false}
+}
+function renderAll(){
+ renderOcean();renderProtected();renderSpecies();renderCoach();renderBait();
+}
+function hourlyDetails(site){
+ return `<details><summary>Show hour-by-hour ranking</summary><div style="overflow-x:auto"><table><thead><tr><th>Time</th><th>Verdict</th><th>Wind</th><th>Est. surf</th><th>Tide</th></tr></thead><tbody>${site.hours.slice().sort((a,b)=>{if(a.hard!==b.hard)return a.hard?1:-1;return b.score-a.score}).map(x=>{const v=verdict(x.score,x.hard);return `<tr><td>${timeLabel(x.h)}</td><td><span class="status ${v[1]}">${v[0]} · ${x.score}</span></td><td>${x.wind.toFixed(1)} mph ${compass(x.dir)} · ${x.windRelation}</td><td>${x.surf.toFixed(1)} ft<br><span class="note">${x.wave.toFixed(1)} ft model · ${x.period.toFixed(0)} sec</span></td><td>${x.tide.stage} · ${x.tide.movement.toFixed(2)} ft/hr</td></tr>`}).join('')}</tbody></table></div></details>`;
+}
+function renderOcean(){
+ const top=dataBundle.ocean[0],v=verdict(top.best.score,top.best.hard),fish=bestSpecies(top);
+ $('accessName').textContent=top.name+' · '+timeLabel(top.best.h);
+ $('accessStatus').innerHTML=`<span class="status ${v[1]}">${v[0]} · ${top.best.score}/100</span>`;
+ $('accessReason').textContent='Best ocean-access option after excluding all protected-water locations.';
+ $('accessMetrics').innerHTML=`<div class="metric"><b>${top.best.wind.toFixed(1)} mph</b><span>Wind</span></div><div class="metric"><b>${top.best.surf.toFixed(1)} ft</b><span>Est. surf</span></div><div class="metric"><b>${top.best.temp||'—'}°F</b><span>Water</span></div><div class="metric"><b>${top.best.tide.stage}</b><span>Tide</span></div>`;
+ $('fishName').textContent=top.zone;$('fishTarget').textContent=fish;$('fishReason').textContent='Most likely target based on habitat and site profile.';
+ $('oceanRows').innerHTML=dataBundle.ocean.map((s,i)=>{const v=verdict(s.best.score,s.best.hard);return `<tr><td>${i+1}</td><td><b>${s.name}</b><br>${timeLabel(s.best.h)}${hourlyDetails(s)}</td><td><span class="status ${v[1]}">${v[0]}</span></td><td>${s.best.wind.toFixed(1)} mph ${compass(s.best.dir)} ${s.best.windRelation} · ${s.best.surf.toFixed(1)} ft est. surf</td><td><b>${bestSpecies(s)}</b><br>${s.zone}</td><td class="score">${s.best.score}<div class="bar"><div class="fill" style="width:${s.best.score}%"></div></div></td></tr>`}).join('');
+}
+function renderProtected(){
+ const top=dataBundle.protected[0];
+ $('protectedTop').innerHTML=`${top.name} · ${timeLabel(top.best.h)} · ${bestSpecies(top)}<small>${top.notes}</small>`;
+ $('protectedReason').textContent='Best sheltered fallback based on access, tide, habitat and selected target.';
+ $('protectedRows').innerHTML=dataBundle.protected.map((s,i)=>`<tr><td>${i+1}</td><td><b>${s.name}</b><br>${timeLabel(s.best.h)}${hourlyDetails(s)}</td><td>${bestSpecies(s)}</td><td>${s.best.wind.toFixed(1)} mph wind · ${s.best.tide.stage} tide<br>${s.habitats.join(' · ')}</td><td class="score">${s.best.score}<div class="bar"><div class="fill" style="width:${s.best.score}%"></div></div></td></tr>`).join('');
+}
+function renderSpecies(){
+ const species=[['halibut','Halibut'],['spotted','Spotted bay bass'],['calico','Calico bass'],['sand','Sand bass'],['yellowtail','Yellowtail']];
+ const pool=[...dataBundle.ocean,...dataBundle.protected];
+ const ranked=species.map(([key,label])=>{const options=pool.map(s=>({...s,fit:clamp((s[key]||0)*7+s.best.score*.25+(s.habitats.includes('sand')&&key==='halibut'?8:0))})).sort((a,b)=>b.fit-a.fit);return {key,label,best:options[0]}}).sort((a,b)=>b.best.fit-a.best.fit);
+ const top=ranked[0];
+ $('speciesTop').textContent=`${top.label} · ${top.best.name}`;$('speciesTopReason').textContent=`Best match at ${timeLabel(top.best.best.h)} based on habitat, conditions and species profile.`;
+ $('structureTop').textContent=top.best.habitats.join(' · ');$('structureTopReason').textContent=top.key==='halibut'?'Fish sand beside channels, reef, eelgrass or jetty edges.':'Work the strongest matching structure and active current edge.';
+ $('speciesCards').innerHTML=ranked.map((r,i)=>`<div class="hour-card"><span class="status ${r.best.fit>=75?'go':r.best.fit>=55?'caution':'nogo'}">${r.best.fit}/100 fit</span><b style="margin-top:7px">${i+1}. ${r.label}</b><div>${r.best.name} · ${timeLabel(r.best.best.h)}</div><span class="habitat">${r.best.habitats.join(' · ')}</span></div>`).join('');
+ $('speciesRows').innerHTML=ranked.map(r=>`<tr><td><b>${r.label}</b></td><td>${r.best.name}</td><td>${timeLabel(r.best.best.h)}</td><td>${r.best.best.temp||'—'}°F · ${r.best.best.tide.stage}</td><td>${r.best.habitats.join(' · ')}</td></tr>`).join('');
+}
+function baitRank(site){
+ const night=$('period').value==='night',temp=site.best.temp||64;
+ const a=[
+ {n:'Live topsmelt / jacksmelt',s:82+(site.habitats.includes('sand')?4:0)+(night?4:0),h:'#1–1/0',w:'Hardy, locally common and an excellent halibut profile.'},
+ {n:'Live anchovy',s:78+(temp>=63?4:0),h:'#2–#1',w:'Premium natural bait when local schools are present.'},
+ {n:'Small live sardine',s:74+(temp>=65?6:0),h:'1/0–2/0',w:'Strong swimmer and excellent larger-profile bait.'},
+ {n:'Small legal live croaker',s:64+(night?4:0),h:'#1–2/0',w:'Useful local forage over sand and channel edges.'},
+ {n:'3–5 inch swimbait',s:62,h:'Jighead',w:'Best artificial backup for covering bottom.'},
+ {n:'Frozen anchovy or squid strip',s:50-(night?7:0),h:'#1–2/0',w:'Convenient backup, but attracts more scavengers.'}
+ ];return a.sort((x,y)=>y.s-x.s);
+}
+function renderBait(){
+ const site=dataBundle.ocean[0],b=baitRank(site);
+ $('primaryBait').textContent=b[0].n;$('primaryBaitWhy').textContent=b[0].w;
+ $('backupBait').textContent=b[1].n;$('backupBaitWhy').textContent=b[1].w;
+ $('baitRows').innerHTML=b.map(x=>`<li><b>${x.n}</b> · ${x.s}/100 · ${x.h}<br><span class="reason">${x.w}</span></li>`).join('');
+ $('sabikiPlan').textContent='Size 6–10 Sabiki hooks';$('sabikiReason').textContent='Catch bait near the fishing area and retain only lively, legal bait.';
+ $('hookPlan').textContent=b[0].h;$('hookReason').textContent='Match hook size to bait size, not halibut size. Keep the bait roughly 1–3 feet above bottom.';
+ const night=$('period').value==='night';$('bycatch').textContent=night?'Elevated':'Moderate';$('bycatchReason').textContent=night?'Night bottom fishing increases bat ray, shark and guitarfish encounters. Favor lively bait over dead bait.':'Live bait and active drifting generally reduce scavenger attention compared with soaking dead bait.';
+}
+function renderCoach(){
+ const top=dataBundle.ocean[0],fish=bestSpecies(top),night=$('period').value==='night';
+ $('coachObjective').textContent=`Target ${fish} from ${top.name}`;$('coachObjectiveReason').textContent=`Launch near ${timeLabel(top.best.h)} and fish ${top.zone}.`;
+ $('biteWindow').textContent=`${timeLabel(top.best.h)}–${timeLabel((top.best.h+1)%24)}`;$('biteWindowReason').textContent='Best combined safety and fishing score.';
+ $('launchChecklist').innerHTML=[['Forecast and launch visually checked','good'],['PFD, VHF and phone secured','good'],[night?'Navigation lights and return route':'Sun protection and water','warn'],['Net ready before fishing','good'],['Legal measuring device available','good'],['Live bait container not overcrowded','warn']].map(x=>`<div class="check ${x[1]}">${x[0]}</div>`).join('');
+ $('coachSteps').innerHTML=[
+ `Launch at ${top.name} near ${timeLabel(top.best.h)} after visually checking conditions.`,
+ 'Catch lively local bait with a small-hook Sabiki before beginning the halibut drift.',
+ `Move to ${top.zone} and locate a sand-to-structure transition.`,
+ 'Use only enough sliding weight to maintain occasional bottom contact.',
+ night?'Slow-troll or drift very quietly in 5–15 feet first.':'Make controlled drifts across 10–30 feet, adjusting to bait and structure.',
+ 'Mark bites and repeat the exact drift line. Move after 20–30 minutes without signs of life.',
+ 'Let the rod load before applying steady pressure, then have the net positioned before the fish reaches the surface.'
+ ].map(x=>`<li>${x}</li>`).join('');
+}
+
+let outlookLoaded=false,outlookLoading=false;
+function outlookColor(score){return score>=76?'#def7e8':score>=56?'#fff1cc':'#ffe2df'}
+function outlookLabel(score){return score>=76?'PROMISING':score>=56?'POSSIBLE':'POOR'}
+function outlookConfidence(dayIndex){return dayIndex<=2?['High','conf-high']:dayIndex<=6?['Medium','conf-med']:['Low','conf-low']}
+function outlookDailyAverage(times,values,date,startHour=5,endHour=12){
+ const rows=[];for(let i=0;i<times.length;i++){if(!times[i].startsWith(date+'T'))continue;const h=Number(times[i].slice(11,13));if(h>=startHour&&h<endHour&&Number.isFinite(values[i]))rows.push(values[i])}
+ return rows.length?rows.reduce((a,b)=>a+b,0)/rows.length:null;
+}
+async function loadOpportunityOutlook(){
+ if(outlookLoading)return;outlookLoading=true;
+ const grid=$('outlookGrid'),state=$('outlookState');
+ grid.innerHTML='<div class="week-loading" style="grid-column:1/-1">Loading fresh 16-day weather and marine forecasts…</div>';
+ state.textContent='Forecast confidence decreases with lead time.';
+ try{
+  const lat=33.5984,lon=-117.8838;
+  const weather=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,wind_gusts_10m,wind_direction_10m&wind_speed_unit=mph&timezone=America%2FLos_Angeles&forecast_days=16`;
+  const marine=`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,wave_period&length_unit=imperial&timezone=America%2FLos_Angeles&forecast_days=16`;
+  const [wr,mr]=await Promise.all([fetch(weather),fetch(marine)]);if(!wr.ok||!mr.ok)throw new Error('A long-range forecast service did not respond.');
+  const [w,m]=await Promise.all([wr.json(),mr.json()]);const start=new Date();start.setHours(12,0,0,0);const days=[];
+  for(let i=0;i<16;i++){
+   const d=new Date(start);d.setDate(start.getDate()+i);const date=fmtDate(d);
+   const wind=outlookDailyAverage(w.hourly.time,w.hourly.wind_speed_10m,date),gust=outlookDailyAverage(w.hourly.time,w.hourly.wind_gusts_10m,date),wave=outlookDailyAverage(m.hourly.time,m.hourly.wave_height,date),period=outlookDailyAverage(m.hourly.time,m.hourly.wave_period,date);
+   let score=100;if(wind!==null)score-=Math.max(0,wind-7)*4.2;if(gust!==null)score-=Math.max(0,gust-13)*2;if(wave!==null)score-=Math.max(0,wave-1.5)*15;if(period!==null&&period>=14&&wave>1.2)score-=7;score=clamp(score);
+   days.push({d,wind,gust,wave,period,score,conf:outlookConfidence(i)});
+  }
+  grid.innerHTML=days.map(x=>`<div class="outlook-day" style="background:${outlookColor(x.score)}"><strong>${x.d.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</strong><div class="outlook-score">${x.score}</div><div class="week-label">${outlookLabel(x.score)}</div><div class="outlook-meta">${x.wind===null?'—':x.wind.toFixed(1)+' mph'} wind<br>${x.gust===null?'—':x.gust.toFixed(1)+' mph'} gusts<br>${x.wave===null?'—':x.wave.toFixed(1)+' ft'} model waves<br>${x.period===null?'—':x.period.toFixed(0)+' sec'} period</div><span class="confidence-pill ${x.conf[1]}">${x.conf[0]} confidence</span></div>`).join('');
+  state.textContent='Updated '+new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+'. This is a planning trend, not a launch verdict.';outlookLoaded=true;
+ }catch(e){grid.innerHTML='<div class="week-loading" style="grid-column:1/-1">Opportunity outlook unavailable.</div>';state.innerHTML='<span class="error">'+e.message+'</span>'}
+ finally{outlookLoading=false}
+}
+
+function showPage(p){
+ document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
+ ['ocean','species','coach','bait','outlook','protected'].forEach(x=>$(x+'-page').classList.toggle('hidden',x!==p));
+}
+function init(){
+ const d=new Date();$('startDate').value=fmtDate(d);$('startDate').min=fmtDate(d);
+ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{showPage(b.dataset.page);if(b.dataset.page==='outlook'&&!outlookLoaded)loadOpportunityOutlook()}));
+ document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;if(mode==='yellowtail')$('target').value='yellowtail';setModeText();run()}));
+ ['target','period','platform','hours'].forEach(id=>$(id).addEventListener('change',()=>{setModeText();loadWeekOutlook();run();loadWeekOutlook()}));
+ $('startDate').addEventListener('change',()=>{setModeText();renderWeek();run()});
+ $('refresh').addEventListener('click',()=>{run();loadWeekOutlook()});
+ $('refreshOutlook').addEventListener('click',loadOpportunityOutlook);
+ setModeText();loadWeekOutlook();run();
+}
+init();
+</script></body></html>
