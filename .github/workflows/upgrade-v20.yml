@@ -1,0 +1,121 @@
+name: Upgrade Go Fish Planner to v20
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/upgrade-v20.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v20 Return Safety module
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          if 'Go Fish Planner v20' in s:
+              print('v20 already applied')
+              raise SystemExit(0)
+          s=s.replace('<title>Go Fish Planner v19</title>','<title>Go Fish Planner v20</title>')
+          s=s.replace('<span class="version">v19 live</span>','<span class="version">v20 live</span>')
+          s=s.replace('.reco-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}', '.reco-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.trip-reco-grid{grid-template-columns:repeat(3,1fr)}')
+          s=s.replace('@media(max-width:950px){.controls{grid-template-columns:repeat(2,1fr)}', '@media(max-width:950px){.trip-reco-grid{grid-template-columns:1fr}.controls{grid-template-columns:repeat(2,1fr)}')
+          old='''<section class="banner"><h2 style="margin-top:0">Two-part recommendation</h2><div class="reco-grid">
+          <div class="decision"><div class="eyebrow">Decision 1 · Launch</div><div class="big" id="accessName">Loading…</div><div id="accessStatus"></div><p class="reason" id="accessReason"></p><div class="metrics" id="accessMetrics"></div></div>
+          <div class="decision"><div class="eyebrow">Decision 2 · Where to fish</div><div class="big" id="fishName">—</div><div class="callout" id="fishTarget"></div><p class="reason" id="fishReason"></p></div>
+          </div></section>'''
+          new='''<section class="banner"><h2 style="margin-top:0">Three-part recommendation</h2><div class="reco-grid trip-reco-grid">
+          <div class="decision"><div class="eyebrow">Decision 1 · Launch</div><div class="big" id="accessName">Loading…</div><div id="accessStatus"></div><p class="reason" id="accessReason"></p><div class="metrics" id="accessMetrics"></div></div>
+          <div class="decision"><div class="eyebrow">Decision 2 · Where to fish</div><div class="big" id="fishName">—</div><div class="callout" id="fishTarget"></div><p class="reason" id="fishReason"></p></div>
+          <div class="decision"><div class="eyebrow">Decision 3 · Return safely</div><div class="big" id="returnTime">Loading…</div><div id="returnStatus"></div><p class="reason" id="returnReason"></p><div class="metrics" id="returnMetrics"></div></div>
+          </div></section>'''
+          if old not in s: raise SystemExit('Launch recommendation block not found')
+          s=s.replace(old,new)
+          old_hour='''function hourlyDetails(site){
+           return `<details><summary>Show hour-by-hour ranking</summary><div style="overflow-x:auto"><table><thead><tr><th>Time</th><th>Verdict</th><th>Wind</th><th>Est. surf</th><th>Tide</th></tr></thead><tbody>${site.hours.slice().sort((a,b)=>{if(a.hard!==b.hard)return a.hard?1:-1;return b.score-a.score}).map(x=>{const v=verdict(x.score,x.hard);return `<tr><td>${timeLabel(x.h)}</td><td><span class="status ${v[1]}">${v[0]} · ${x.score}</span></td><td>${x.wind.toFixed(1)} mph ${compass(x.dir)} · ${x.windRelation}</td><td>${x.surf.toFixed(1)} ft<br><span class="note">${x.wave.toFixed(1)} ft model · ${x.period.toFixed(0)} sec</span></td><td>${x.tide.stage} · ${x.tide.movement.toFixed(2)} ft/hr</td></tr>`}).join('')}</tbody></table></div></details>`;
+          }'''
+          new_hour='''function hourlyDetails(site){
+           return `<details><summary>Show hour-by-hour ranking</summary><div style="overflow-x:auto"><table><thead><tr><th>Time</th><th>Fishing verdict</th><th>Return safety</th><th>Wind</th><th>Est. surf</th><th>Tide</th></tr></thead><tbody>${site.hours.slice().sort((a,b)=>a.h-b.h).map(x=>{const v=verdict(x.score,x.hard),r=returnHourScore(site,x),rv=verdict(r.returnScore,r.returnHard);return `<tr><td>${timeLabel(x.h)}</td><td><span class="status ${v[1]}">${v[0]} · ${x.score}</span></td><td><span class="status ${rv[1]}">${rv[0]} · ${r.returnScore}</span></td><td>${x.wind.toFixed(1)} mph ${compass(x.dir)} · ${x.windRelation}</td><td>${x.surf.toFixed(1)} ft<br><span class="note">${x.wave.toFixed(1)} ft model · ${x.period.toFixed(0)} sec</span></td><td>${x.tide.stage} · ${x.tide.movement.toFixed(2)} ft/hr</td></tr>`}).join('')}</tbody></table></div></details>`;
+          }'''
+          if old_hour not in s: raise SystemExit('Hourly details function not found')
+          s=s.replace(old_hour,new_hour)
+          marker="""function renderOcean(){
+           const top=dataBundle.ocean[0],v=verdict(top.best.score,top.best.hard),fish=bestSpecies(top);"""
+          module="""function returnHourScore(site,x){
+           const platform=$('platform').value;
+           const windLimit=platform==='hobie'?8:12,gustLimit=platform==='hobie'?14:20,surfLimit=platform==='hobie'?1.8:2.8;
+           let score=100,hard=!!x.hard;
+           score-=Math.max(0,x.wind-windLimit)*(platform==='hobie'?4.2:2.8);
+           score-=Math.max(0,x.gust-gustLimit)*(platform==='hobie'?2.0:1.35);
+           score-=Math.max(0,x.surf-surfLimit)*(platform==='hobie'?20:14);
+           if(x.windRelation==='offshore')score-=x.wind*(platform==='hobie'?1.8:.85);
+           if(x.windRelation==='onshore')score-=Math.max(0,x.surf-1)*7;
+           if(x.windRelation==='cross-shore')score-=Math.max(0,x.wind-7)*.8;
+           if(x.period>=14&&x.surf>1.3)score-=10;
+           if(site.name.includes('Entrance')&&x.tide.stage==='falling')score-=8;
+           if(platform==='hobie'&&(x.wind>14||x.gust>20||x.surf>2.8))hard=true;
+           if(platform==='catalina'&&(x.wind>19||x.gust>28||x.surf>4.2))hard=true;
+           score=clamp(score);if(hard)score=Math.min(score,39);
+           return {...x,returnScore:score,returnHard:hard};
+          }
+          function returnSafetyPlan(site){
+           const chronological=site.hours.slice().sort((a,b)=>a.h-b.h).map(x=>returnHourScore(site,x));
+           const launchHour=site.best.h,afterLaunch=chronological.filter(x=>x.h>=launchHour);
+           const safe=afterLaunch.filter(x=>!x.returnHard&&x.returnScore>=60),latest=safe.at(-1)||null;
+           const launchReturn=afterLaunch[0]||chronological[0],end=afterLaunch.at(-1)||chronological.at(-1);
+           const trend=end&&launchReturn?(end.returnScore<=launchReturn.returnScore-10?'deteriorating':end.returnScore>=launchReturn.returnScore+10?'improving':'steady'):'unknown';
+           let status='NO-GO',css='nogo',recommendation='No safe return window',reason='The selected launch does not retain a usable return window. Choose protected water or another time.';
+           if(latest){
+            const fullWindow=latest===end,score=latest.returnScore;
+            if(fullWindow&&score>=80){status='GO';css='go'}else{status='CAUTION';css='caution'}
+            recommendation=`Begin returning by ${timeLabel(latest.h)}`;
+            reason=`Return conditions are ${trend}. At ${timeLabel(latest.h)}: ${latest.wind.toFixed(1)} mph ${compass(latest.dir)} ${latest.windRelation} wind, gusts ${latest.gust.toFixed(1)} mph and ${latest.surf.toFixed(1)} ft estimated surf.`;
+            if(!fullWindow)reason+=' Later hours fall below the return-safety threshold.';
+           }
+           return {status,css,recommendation,reason,latest,trend,hours:chronological};
+          }
+          function renderOcean(){
+           const top=dataBundle.ocean[0],v=verdict(top.best.score,top.best.hard),fish=bestSpecies(top),returnPlan=returnSafetyPlan(top);"""
+          if marker not in s: raise SystemExit('renderOcean marker not found')
+          s=s.replace(marker,module)
+          old_rows=""" $('fishName').textContent=top.zone;$('fishTarget').textContent=fish;$('fishReason').textContent='Most likely target based on habitat and site profile.';
+           $('oceanRows').innerHTML=dataBundle.ocean.map((s,i)=>{const v=verdict(s.best.score,s.best.hard);return `<tr><td>${i+1}</td><td><b>${s.name}</b><br>${timeLabel(s.best.h)}${hourlyDetails(s)}</td><td><span class="status ${v[1]}">${v[0]}</span></td><td>${s.best.wind.toFixed(1)} mph ${compass(s.best.dir)} ${s.best.windRelation} · ${s.best.surf.toFixed(1)} ft est. surf</td><td><b>${bestSpecies(s)}</b><br>${s.zone}</td><td class="score">${s.best.score}<div class="bar"><div class="fill" style="width:${s.best.score}%"></div></div></td></tr>`}).join('');"""
+          new_rows=""" $('fishName').textContent=top.zone;$('fishTarget').textContent=fish;$('fishReason').textContent='Most likely target based on habitat and site profile.';
+           $('returnTime').textContent=returnPlan.recommendation;
+           $('returnStatus').innerHTML=`<span class="status ${returnPlan.css}">${returnPlan.status}${returnPlan.latest?' · '+returnPlan.latest.returnScore+'/100':''}</span>`;
+           $('returnReason').textContent=returnPlan.reason;
+           $('returnMetrics').innerHTML=returnPlan.latest?`<div class="metric"><b>${returnPlan.latest.wind.toFixed(1)} mph</b><span>Return wind</span></div><div class="metric"><b>${returnPlan.latest.gust.toFixed(1)} mph</b><span>Return gust</span></div><div class="metric"><b>${returnPlan.latest.surf.toFixed(1)} ft</b><span>Landing surf</span></div><div class="metric"><b>${returnPlan.trend}</b><span>Trend</span></div>`:'<div class="metric"><b>NO-GO</b><span>Return window</span></div>';
+           $('oceanRows').innerHTML=dataBundle.ocean.map((s,i)=>{const v=verdict(s.best.score,s.best.hard),rp=returnSafetyPlan(s);return `<tr><td>${i+1}</td><td><b>${s.name}</b><br>${timeLabel(s.best.h)}${hourlyDetails(s)}</td><td><span class="status ${v[1]}">${v[0]}</span><br><span class="note">Return: ${rp.status}${rp.latest?' by '+timeLabel(rp.latest.h):''}</span></td><td>${s.best.wind.toFixed(1)} mph ${compass(s.best.dir)} ${s.best.windRelation} · ${s.best.surf.toFixed(1)} ft est. surf</td><td><b>${bestSpecies(s)}</b><br>${s.zone}</td><td class="score">${s.best.score}<div class="bar"><div class="fill" style="width:${s.best.score}%"></div></div></td></tr>`}).join('');"""
+          if old_rows not in s: raise SystemExit('Ocean rows block not found')
+          s=s.replace(old_rows,new_rows)
+          s=s.replace("const top=usable[0],fish=bestSpecies(top),profile=areaPositionProfile(top),plan=positionHoldingPlan(top,fish);", "const top=usable[0],fish=bestSpecies(top),profile=areaPositionProfile(top),plan=positionHoldingPlan(top,fish),returnPlan=returnSafetyPlan(top);")
+          s=s.replace("$('coachObjectiveReason').textContent=`Launch near ${timeLabel(top.best.h)} and fish ${top.zone}. This is the highest-ranked ocean site that remains above the usable threshold.`;", "$('coachObjectiveReason').textContent=`Launch near ${timeLabel(top.best.h)} and fish ${top.zone}. ${returnPlan.recommendation}; return conditions are ${returnPlan.trend}.`;")
+          s=s.replace("  ['Drift sock line and attachment point checked','warn'],", "  ['Drift sock line and attachment point checked','warn'],\n  [returnPlan.latest?`${returnPlan.recommendation} (${returnPlan.status})`:'No safe return window—use protected water',returnPlan.latest?(returnPlan.status==='GO'?'good':'warn'):'bad'],")
+          s=s.replace("  `Launch at ${top.name} near ${timeLabel(top.best.h)} after visually checking conditions.`,", "  `Launch at ${top.name} near ${timeLabel(top.best.h)} after visually checking conditions.`,\n  returnPlan.latest?`${returnPlan.recommendation}. Do not extend the trip beyond the modeled safe return window.`:'Do not launch: no usable return window exists for this trip.',")
+          p.write_text(s)
+          Path('go_fish_planner_v20.html').write_text(s)
+          PY
+      - name: Validate JavaScript
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(); Path('/tmp/app.js').write_text(s.split('<script>',1)[1].rsplit('</script>',1)[0])
+          PY
+          node --check /tmp/app.js
+      - name: Commit v20
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html go_fish_planner_v20.html
+          git diff --cached --quiet || git commit -m "Add v20 return safety and ocean exit score"
+          git push
