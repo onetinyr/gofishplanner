@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0879c9">
-<title>Go Fish Planner v18</title>
+<title>Go Fish Planner v19</title>
 <style>
 :root{--bg:#eef3f7;--card:#fff;--ink:#17212b;--muted:#64748b;--line:#d7e0e7;--blue:#0879c9;--green:#18864b;--amber:#a96000;--red:#b42318;--soft:#edf7ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}main{max-width:1180px;margin:auto;padding:18px}
@@ -28,7 +28,7 @@ details summary{cursor:pointer;font-weight:800;color:#075985;margin-top:4px}
 .outlook-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.outlook-day{border:1px solid var(--line);border-radius:11px;padding:11px;background:#fff}.outlook-day strong{display:block;font-size:.88rem}.outlook-score{font-size:1.45rem;font-weight:950;margin:6px 0}.outlook-meta{font-size:.74rem;color:var(--muted);line-height:1.35}.confidence-pill{display:inline-block;padding:3px 7px;border-radius:999px;font-size:.7rem;font-weight:850;margin-top:6px}.conf-high{background:#def7e8;color:#11643a}.conf-med{background:#fff1cc;color:#805000}.conf-low{background:#ffe2df;color:#9b1c14}.outlook-note{padding:10px 12px;border-radius:10px;background:#f4f8fb;color:#334155;font-size:.88rem;margin-top:10px}
 </style></head>
 <body><main>
-<div class="top"><div><h1>Go Fish Planner</h1><p class="sub">Live launch safety, habitat and fishing-window recommendations.</p></div><span class="version">v18 live</span></div>
+<div class="top"><div><h1>Go Fish Planner</h1><p class="sub">Live launch safety, habitat and fishing-window recommendations.</p></div><span class="version">v19 live</span></div>
 
 <div class="tabs">
 <button class="tab active" data-page="ocean">1. Launch Decision</button>
@@ -90,6 +90,11 @@ details summary{cursor:pointer;font-weight:800;color:#075985;margin-top:4px}
 <div class="decision"><div class="eyebrow">Best bite window</div><div class="big" id="biteWindow">—</div><p class="reason" id="biteWindowReason"></p></div>
 </div></section>
 <section class="card"><h2 style="margin-top:0">Launch checklist</h2><div id="launchChecklist" class="check-grid"></div></section>
+<section class="card"><h2 style="margin-top:0">Position Holding Strategy</h2>
+<div class="strategy-grid">
+<div class="strategy-card"><div class="eyebrow">Recommended method</div><h3 id="positionStrategy">—</h3><p class="reason" id="positionReason"></p></div>
+<div class="strategy-card"><div class="eyebrow">Anchor and drift-sock setup</div><h3 id="anchorSetup">—</h3><p class="reason" id="anchorReason"></p></div>
+</div></section>
 <section class="card"><h2 style="margin-top:0">Step-by-step game plan</h2><ol id="coachSteps" class="coach-list"></ol></section>
 </div>
 
@@ -373,6 +378,65 @@ function renderBait(){
  $('hookPlan').textContent=b[0].h;$('hookReason').textContent='Match hook size to bait size, not halibut size. Keep the bait roughly 1–3 feet above bottom.';
  const night=$('period').value==='night';$('bycatch').textContent=night?'Elevated':'Moderate';$('bycatchReason').textContent=night?'Night bottom fishing increases bat ray, shark and guitarfish encounters. Favor lively bait over dead bait.':'Live bait and active drifting generally reduce scavenger attention compared with soaking dead bait.';
 }
+
+function areaPositionProfile(site){
+ const profiles={
+  'Alamitos Bay Entrance':{method:'Slow troll or controlled drift',anchor:'Anchor only on the sand-flat edge outside traffic',why:'Use the 5 lb anchor only after locating productive halibut bottom and only when swell and current are mild. Never anchor in the entrance channel or close to the breakwall wash.',sock:'Use one stern drift sock when wind is pushing you faster than the tide.'},
+  'Seal Beach Nearshore':{method:'Stay mobile and drift parallel to shore',anchor:'Anchor rarely',why:'This is an exposed beach-and-pier corridor. Do not anchor in surf influence, near the pier traffic corridor or when swell creates noticeable kayak surge.',sock:'Use one stern drift sock before considering an anchor.'},
+  'Bolsa Chica / Sunset Beach':{method:'Troll or make repeated halibut drifts',anchor:'Anchor only over confirmed productive sand in very mild swell',why:'The launch is highly exposed. An anchor is not a safety tool here and must never be used to remain offshore as conditions worsen.',sock:'Use one stern drift sock in moderate breeze; abort rather than adding a second sock in deteriorating exposed-ocean conditions.'},
+  'Huntington Beach Nearshore':{method:'Remain mobile across sand flats',anchor:'Generally do not anchor',why:'The open beach, pier corridor and surf influence make controlled drifts safer and more productive than sitting on anchor.',sock:'Use one stern drift sock to slow the presentation; return if it no longer controls the drift.'},
+  'Newport Harbor Entrance':{method:'Controlled passes outside the jetty and kelp edge',anchor:'Anchor only outside navigation lanes on known sand or structure',why:'Keep clear of the harbor entrance, jetty wash and vessel traffic. Drift first and anchor only when the exact productive spot is identified.',sock:'One stern drift sock is preferred when wind—not current—is causing excess speed.'},
+  'Crystal Cove':{method:'Drift kelp and reef edges',anchor:'Avoid anchoring into kelp or reef',why:'Snag risk, swell and limited easy landing options favor staying mobile. Never anchor where the rode could foul kelp or rock.',sock:'Use one stern drift sock for speed control, while maintaining a clear escape route.'},
+  'Dana Point Harbor Entrance':{method:'Drift the east-jetty sand or outside kelp edge',anchor:'Anchor only outside marina traffic and away from jetty surge',why:'This is one of the better areas for stationary fishing when calm, but the harbor entrance and jetty remain no-anchor transit zones.',sock:'Use one stern drift sock first when wind is the main force.'},
+  'Doheny Nearshore':{method:'Slow troll or drift the sand flats',anchor:'Anchor only after marking bait or repeated bites',why:'Stay outside breaking-wave influence and keep a direct path back toward protected Dana Point water.',sock:'One stern drift sock is the default position-control tool.'},
+  'Capistrano Beach':{method:'Mobile drifts over sand and scattered reef',anchor:'Anchor rarely and never near breaking structure',why:'The exposed shoreline and mixed reef make snag-free drifting preferable.',sock:'Use one stern drift sock; leave if drift control becomes marginal.'},
+  'San Clemente North Beach':{method:'Drift the sand and pier-adjacent troughs',anchor:'Generally avoid anchoring',why:'Keep clear of the pier corridor, surf influence and reef snags. Repeat productive drift lines instead.',sock:'One stern drift sock may be used in otherwise safe conditions.'},
+  'T-Street / Calafia':{method:'Stay mobile along kelp and reef edges',anchor:'Do not anchor into kelp or reef',why:'This is highly exposed with substantial snag and surf risk. Anchoring is not recommended from the Hobie.',sock:'A drift sock may slow a safe drift, but worsening conditions require an immediate return.'},
+  'Dana Cove':{method:'Slow drift docks, riprap and sand edges',anchor:'Anchor on open sand only, clear of slips and traffic',why:'Protected water makes short stationary presentations practical, but avoid blocking dock access or anchoring against riprap.',sock:'Usually unnecessary; use one small stern drift sock only when breeze accelerates the drift.'},
+  'Newport Harbor Channels':{method:'Controlled channel-edge drifts',anchor:'Anchor only outside marked channels and vessel lanes',why:'Use the anchor near legal dock, eelgrass or sand edges only when you can remain fully outside navigation traffic.',sock:'Usually unnecessary; current often matters more than wind.'},
+  'Huntington Harbour Channels':{method:'Slow drift docks and eelgrass edges',anchor:'Anchor selectively outside the channel',why:'A short anchor set can hold a productive dock or edge, but never obstruct vessel traffic or anchor where the swing reaches docks.',sock:'Rarely needed in the sheltered harbor.'},
+  'Alamitos Bay / Naples':{method:'Drift channels, docks and sand flats',anchor:'Anchor beside—not inside—the channel',why:'Use short stationary stops only where swing room is clear. Avoid bridge approaches, active slips and the center of navigation routes.',sock:'Usually unnecessary; pedal or Bixpy corrections should be enough.'},
+  'Marine Stadium':{method:'Drift or lightly hold along riprap and sand',anchor:'Anchor on open bottom with ample clearance',why:'This sheltered basin is suitable for stationary light-tackle fishing when clear of events, traffic and shoreline users.',sock:'Not normally needed.'},
+  'Dana Point Harbor Interior':{method:'Slow drift basin and dock edges',anchor:'Anchor on open sand away from slips and traffic',why:'The harbor interior supports short anchor sets, but maintain room to swing and do not hold in fairways.',sock:'Usually unnecessary.'},
+  'Mother’s Beach / Naples Canals':{method:'Pedal-position or make very short drifts',anchor:'Avoid anchoring in narrow canals',why:'Tight canals, docks, swimmers and boat traffic make active positioning safer than an anchor swing.',sock:'Not needed.'}
+ };
+ return profiles[site.name]||{method:'Controlled drift first',anchor:'Anchor only after confirming a safe, legal and productive position',why:'Stay clear of traffic, surf influence, kelp, reef and any area without adequate swing room.',sock:'Use one stern drift sock before considering the anchor when wind is the main source of drift.'};
+}
+function positionHoldingPlan(site,fish){
+ const p=areaPositionProfile(site);
+ const wind=site.best.wind||0,gust=site.best.gust||0,wave=site.best.wave||0,surf=site.best.surf||0;
+ let method=p.method,anchor=p.anchor,sock=p.sock;
+ let condition='';
+ if(site.best.hard||site.best.score<60){
+  method='Do not use anchoring to remain in unsafe water';
+  anchor='No anchor deployment—return or use protected water';
+  condition='A hard NO-GO or sub-60 ocean score overrides all fishing-position advice.';
+ }else if(wind<6){
+  condition='Light wind: use pedals or Bixpy for small corrections. An anchor is optional only where the area profile permits it.';
+ }else if(wind<10){
+  condition='Moderate breeze: use one stern drift sock before deploying the anchor.';
+ }else if(wind<14){
+  condition='Strong breeze for the Hobie: remain mobile only if the overall trip is still safe. Do not use the anchor as a way to extend the trip.';
+  anchor='Anchor not recommended offshore at this wind level';
+ }else{
+  method='End the exposed-water fishing plan';
+  anchor='Do not anchor';
+  sock='Do not deploy two drift socks as a substitute for returning.';
+  condition='Wind is too strong for a position-holding fishing plan in the Hobie.';
+ }
+ if(gust>=18)condition+=' Gusts strengthen the recommendation to remain mobile or return.';
+ if(Math.max(wave,surf)>=3)condition+=' Elevated wave or surf energy makes anchoring less appropriate.';
+ if(fish==='Yellowtail')anchor='Do not anchor while searching for yellowtail; stay mobile around bait, birds and structure.';
+ else if(fish==='Halibut')condition+=' For halibut, anchor only after locating repeatable productive sand; otherwise keep slow-trolling or drifting.';
+ return {method,anchor,sock,reason:p.why+' '+condition};
+}
+function renderPositionStrategy(site,fish){
+ const plan=positionHoldingPlan(site,fish);
+ $('positionStrategy').textContent=plan.method;
+ $('positionReason').textContent=plan.reason;
+ $('anchorSetup').textContent=plan.anchor;
+ $('anchorReason').textContent=plan.sock;
+}
 function renderCoach(){
  const usable=dataBundle.ocean.filter(s=>!s.best.hard&&s.best.score>=60);
  const protectedTop=dataBundle.protected[0];
@@ -392,17 +456,25 @@ function renderCoach(){
    [night?'Use navigation lights and a known return route':'Reassess conditions before departure','warn'],
    ['Do not override a hard NO-GO because one site has the highest score','bad']
   ].map(x=>`<div class="check ${x[1]}">${x[0]}</div>`).join('');
+  if(protectedTop)renderPositionStrategy(protectedTop,bestSpecies(protectedTop));
+  else{
+   $('positionStrategy').textContent='No position-holding plan available';
+   $('positionReason').textContent='Wait for protected-water results or choose another day.';
+   $('anchorSetup').textContent='Do not anchor offshore';
+   $('anchorReason').textContent='A hard NO-GO overrides all anchor and drift-sock recommendations.';
+  }
   $('coachSteps').innerHTML=[
    'Do not launch from any exposed ocean site under the current conditions.',
    'Open Protected-Water Backup and use the highest-ranked sheltered option.',
    protectedTop?`Primary fallback: ${protectedTop.name} near ${timeLabel(protectedTop.best.h)}.`:'Wait for protected-water results or choose another day.',
+   protectedTop?`Position holding at ${protectedTop.name}: ${areaPositionProfile(protectedTop).method}.`:'Recheck protected-water forecasts.',
    'Fish docks, channels, riprap, eelgrass or sand edges appropriate to the protected location.',
    'Keep the trip conservative and reassess wind locally before launching.',
    'Return to the seven-day outlook to choose a better exposed-ocean day.'
   ].map(x=>`<li>${x}</li>`).join('');
   return;
  }
- const top=usable[0],fish=bestSpecies(top);
+ const top=usable[0],fish=bestSpecies(top),profile=areaPositionProfile(top),plan=positionHoldingPlan(top,fish);
  $('coachObjective').textContent=`Target ${fish} from ${top.name}`;
  $('coachObjectiveReason').textContent=`Launch near ${timeLabel(top.best.h)} and fish ${top.zone}. This is the highest-ranked ocean site that remains above the usable threshold.`;
  $('biteWindow').textContent=`${timeLabel(top.best.h)}–${timeLabel((top.best.h+1)%24)}`;
@@ -411,20 +483,27 @@ function renderCoach(){
   ['Forecast and launch visually checked','good'],
   ['PFD, VHF and phone secured','good'],
   [night?'Navigation lights and return route':'Sun protection and water','warn'],
-  ['Net ready before fishing','good'],
-  ['Legal measuring device available','good'],
-  ['Live bait container not overcrowded','warn']
+  ['Anchor rode, quick release and retrieval plan checked','warn'],
+  ['Drift sock line and attachment point checked','warn'],
+  ['Never anchor in channels, surf, kelp or vessel traffic','bad']
  ].map(x=>`<div class="check ${x[1]}">${x[0]}</div>`).join('');
+ renderPositionStrategy(top,fish);
  $('coachSteps').innerHTML=[
   `Launch at ${top.name} near ${timeLabel(top.best.h)} after visually checking conditions.`,
-  'Catch lively local bait with a small-hook Sabiki before beginning the halibut drift.',
-  `Move to ${top.zone} and locate a sand-to-structure transition.`,
-  'Use only enough sliding weight to maintain occasional bottom contact.',
-  night?'Slow-troll or drift very quietly in 5–15 feet first.':'Make controlled drifts across 10–30 feet, adjusting to bait and structure.',
-  'Mark bites and repeat the exact drift line. Move after 20–30 minutes without signs of life.',
+  'Catch lively local bait with a small-hook Sabiki before beginning the fishing pass.',
+  `Move to ${top.zone} and locate the target structure or sand transition.`,
+  `Position holding for this area: ${profile.method}.`,
+  `Anchor guidance: ${plan.anchor}.`,
+  `${plan.sock}`,
+  fish==='Yellowtail'
+   ?'Stay mobile while searching for bait schools, birds and active fish.'
+   :'Use only enough sliding weight to maintain occasional bottom contact.',
+  night?'Move quietly and keep a short, known return route.':'Mark bites and repeat the exact drift line.',
+  'Move after 20–30 minutes without bait, bites or useful bottom change.',
   'Let the rod load before applying steady pressure, then have the net positioned before the fish reaches the surface.'
  ].map(x=>`<li>${x}</li>`).join('');
 }
+
 
 let outlookLoaded=false,outlookLoading=false;
 function outlookColor(score){return score>=76?'#def7e8':score>=56?'#fff1cc':'#ffe2df'}
