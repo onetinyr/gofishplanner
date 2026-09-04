@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Go Fish Planner v21</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef3f7}#planner{border:0;width:100%;height:100%;display:block}
+</style>
+</head>
+<body>
+<iframe id="planner" src="go_fish_planner_v20.html" title="Go Fish Planner v21"></iframe>
+<script>
+const frame=document.getElementById('planner');
+const REGIONAL_PROXY={lat:33.7488,lon:-118.1250,tide:'9410660'};
+const clamp=n=>Math.max(0,Math.min(100,Math.round(n)));
+const fmtDate=d=>d.toLocaleDateString('en-CA');
+const conf=i=>i<=2?['High','conf-high']:i<=6?['Medium','conf-med']:['Low','conf-low'];
+const scoreColor=s=>s>=76?'#def7e8':s>=56?'#fff1cc':'#ffe2df';
+const band=s=>s>=76?'HIGH OPPORTUNITY':s>=56?'MODERATE':'LOW OPPORTUNITY';
+
+frame.addEventListener('load',()=>enhance(frame.contentWindow,frame.contentDocument));
+
+function enhance(w,d){
+  const $=id=>d.getElementById(id);
+  const version=d.querySelector('.version'); if(version)version.textContent='v21 live';
+  d.title='Go Fish Planner v21';
+
+  const style=d.createElement('style');
+  style.textContent=`
+    .gf21-group{border-top:4px solid #d7e0e7}.gf21-section-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}
+    .gf21-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:9px 0}.gf21-mini{background:#f5f8fa;border-radius:9px;padding:8px}.gf21-mini b{display:block;font-size:1.05rem}.gf21-mini span{font-size:.72rem;color:#64748b}
+    .gf21-toggle{display:flex;gap:8px;margin:0 0 12px}.gf21-toggle button{border:1px solid #d7e0e7;background:#fff;padding:9px 12px;border-radius:9px;font-weight:800;cursor:pointer}.gf21-toggle button.active{background:#0879c9;color:#fff;border-color:#0879c9}
+    .gf21-session{border:1px solid #abd7f5;background:#f7fbff;border-radius:12px;padding:14px;margin:12px 0}.gf21-session h3{margin:.2rem 0 .6rem}.gf21-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.gf21-row>div{background:#fff;border:1px solid #d7e0e7;border-radius:9px;padding:9px}
+    @media(max-width:700px){.gf21-row{grid-template-columns:1fr}.gf21-score-grid{grid-template-columns:1fr}}
+  `;
+  d.head.appendChild(style);
+
+  installOutlook(w,d,$);
+  installCoach(w,d,$);
+}
+
+function installOutlook(w,d,$){
+  const page=$('outlook-page'); if(!page||$('shoreOutlookCard'))return;
+  const banner=page.querySelector('.banner .reason');
+  if(banner)banner.textContent='Boat and shore opportunities are shown separately. Boat scoring remains unchanged; Shore Fishing uses its own Site 1 conditions and fishing-opportunity model.';
+
+  const boatCard=$('outlookGrid')?.closest('.card');
+  if(boatCard){
+    boatCard.classList.add('gf21-group');
+    const head=boatCard.querySelector('h2'); if(head)head.textContent='Boat Opportunities';
+    const note=boatCard.querySelector('.note'); if(note)note.textContent='Existing exposed-water planning trend. Boat launch and return decisions still come from the boat safety engine.';
+  }
+
+  const shore=d.createElement('section');
+  shore.id='shoreOutlookCard';shore.className='card gf21-group';
+  shore.innerHTML=`<div class="gf21-section-head"><div><div class="eyebrow">Shore Fishing</div><h2 style="margin:.25rem 0">Site 1 Opportunity</h2><p class="note" style="margin:.25rem 0">Always operationally GO under ordinary conditions. Scores describe controllability and fishing opportunity, not boat-style launch safety.</p></div><span class="status go">SITE 1 · GO</span></div><div id="shoreOutlookGrid" class="outlook-grid"><div class="week-loading" style="grid-column:1/-1">Open this tab to load Site 1…</div></div><p id="shoreOutlookState" class="note"></p>`;
+  if(boatCard)boatCard.after(shore); else page.appendChild(shore);
+
+  const important=Array.from(page.querySelectorAll('.card')).find(x=>x.querySelector('h2')?.textContent==='Important');
+  if(important){const n=important.querySelector('.outlook-note');if(n)n.textContent='Boat and shore scores are intentionally not a single flat ranking. Boat values describe offshore usability; Site 1 values describe shore conditions and fishing opportunity. Final same-day tactics transfer to Fishing Coach.';}
+
+  const originalRefresh=$('refreshOutlook'); if(originalRefresh)originalRefresh.addEventListener('click',()=>loadShoreOutlook(w,d));
+  const outlookTab=d.querySelector('[data-page="outlook"]'); if(outlookTab)outlookTab.addEventListener('click',()=>loadShoreOutlook(w,d));
+}
+
+async function loadShoreOutlook(w,d){
+  const grid=d.getElementById('shoreOutlookGrid'),state=d.getElementById('shoreOutlookState'); if(!grid)return;
+  grid.innerHTML='<div class="week-loading" style="grid-column:1/-1">Loading Site 1 conditions, marine influence and tide exchange…</div>';
+  try{
+    const weather=`https://api.open-meteo.com/v1/forecast?latitude=${REGIONAL_PROXY.lat}&longitude=${REGIONAL_PROXY.lon}&hourly=wind_speed_10m,wind_gusts_10m,wind_direction_10m&wind_speed_unit=mph&timezone=America%2FLos_Angeles&forecast_days=16`;
+    const marine=`https://marine-api.open-meteo.com/v1/marine?latitude=${REGIONAL_PROXY.lat}&longitude=${REGIONAL_PROXY.lon}&hourly=wave_height,wave_period&length_unit=imperial&timezone=America%2FLos_Angeles&forecast_days=16`;
+    const start=new Date(),end=new Date();end.setDate(end.getDate()+15);
+    const tide=`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=GoFishPlanner&begin_date=${fmtDate(start).replaceAll('-','')}&end_date=${fmtDate(end).replaceAll('-','')}&datum=MLLW&station=${REGIONAL_PROXY.tide}&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
+    const [wr,mr,tr]=await Promise.all([fetch(weather),fetch(marine),fetch(tide)]); if(!wr.ok||!mr.ok||!tr.ok)throw new Error('A shore forecast source did not respond.');
+    const [weatherData,marineData,tideData]=await Promise.all([wr.json(),mr.json(),tr.json()]);
+    const hsel=(d.getElementById('hours')?.value||'6,12').split(',').map(Number); const sH=hsel[0],eH=hsel[1]||24;
+    const days=[];const base=new Date();base.setHours(12,0,0,0);
+    for(let i=0;i<16;i++){
+      const day=new Date(base);day.setDate(base.getDate()+i);const date=fmtDate(day);
+      const vals=(times,data)=>{const out=[];for(let j=0;j<times.length;j++){if(!times[j].startsWith(date+'T'))continue;const h=Number(times[j].slice(11,13));const ok=sH<eH?h>=sH&&h<eH:h>=sH||h<eH;if(ok&&Number.isFinite(data[j]))out.push(data[j]);}return out.length?out.reduce((a,b)=>a+b,0)/out.length:null};
+      const wind=vals(weatherData.hourly.time,weatherData.hourly.wind_speed_10m),gust=vals(weatherData.hourly.time,weatherData.hourly.wind_gusts_10m),wave=vals(marineData.hourly.time,marineData.hourly.wave_height),period=vals(marineData.hourly.time,marineData.hourly.wave_period);
+      const tides=(tideData.predictions||[]).filter(p=>p.t.startsWith(date)); const heights=tides.map(p=>Number(p.v)).filter(Number.isFinite); const exchange=heights.length>=2?Math.max(...heights)-Math.min(...heights):null;
+      let conditions=100; if(wind!==null)conditions-=Math.max(0,wind-9)*3.2;if(gust!==null)conditions-=Math.max(0,gust-16)*1.5;if(wave!==null)conditions-=Math.max(0,wave-2.5)*5;if(period!==null&&period>=15&&wave>2)conditions-=4;conditions=clamp(conditions);
+      let opportunity=62;if(exchange!==null){if(exchange>=2&&exchange<=5)opportunity+=18;else if(exchange<1)opportunity-=12;else if(exchange>6)opportunity-=5;} opportunity+=conditions>=75?8:conditions<50?-8:0;opportunity=clamp(opportunity);
+      days.push({day,wind,gust,wave,period,exchange,conditions,opportunity,conf:conf(i)});
+    }
+    grid.innerHTML=days.map(x=>`<div class="outlook-day" style="background:${scoreColor(x.opportunity)}"><strong>${x.day.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</strong><div class="gf21-score-grid"><div class="gf21-mini"><b>${x.conditions}</b><span>Conditions</span></div><div class="gf21-mini"><b>${x.opportunity}</b><span>Fishing opportunity</span></div></div><div class="week-label">${band(x.opportunity)}</div><div class="outlook-meta">${x.wind===null?'—':x.wind.toFixed(1)+' mph'} wind · ${x.gust===null?'—':x.gust.toFixed(1)+' mph'} gusts<br>${x.wave===null?'—':x.wave.toFixed(1)+' ft'} outside-wave influence<br>${x.exchange===null?'—':x.exchange.toFixed(1)+' ft'} daily tide exchange</div><span class="confidence-pill ${x.conf[1]}">${x.conf[0]} confidence</span></div>`).join('');
+    state.textContent='Site 1 is not ranked against boat launches. Use Fishing Opportunity to choose the day; Fishing Coach will verify the forecast hypothesis on arrival.';
+  }catch(e){grid.innerHTML='<div class="week-loading" style="grid-column:1/-1">Site 1 outlook unavailable.</div>';state.textContent=e.message;}
+}
+
+function installCoach(w,d,$){
+  const page=$('coach-page'); if(!page||$('gf21CoachSwitch'))return;
+  const toggle=d.createElement('section');toggle.className='card';toggle.id='gf21CoachSwitch';
+  toggle.innerHTML=`<div class="eyebrow">Planning handoff</div><h2 style="margin:.25rem 0 .6rem">Coach activity</h2><div class="gf21-toggle"><button id="gf21BoatCoach" class="active">Boat Coach</button><button id="gf21ShoreCoach">Shore Fishing · Site 1</button></div><p class="note">Boat Coach keeps the existing v20 workflow. Shore mode creates the GoFish Session Brief that the separate Fishing Coach consumes for the actual trip.</p>`;
+  page.prepend(toggle);
+  const originalSections=Array.from(page.children).filter(x=>x!==toggle);
+  const shore=d.createElement('div');shore.id='gf21ShoreCoachPanel';shore.className='hidden';
+  shore.innerHTML=`<section class="banner"><div class="eyebrow">PRE → DURING handoff</div><h2 style="margin:.35rem 0">Site 1 Session Brief</h2><p class="reason">GoFish establishes the forecast hypothesis. Fishing Coach then validates it with current conditions and runs the live session.</p></section><section class="gf21-session"><h3 id="gf21BriefTitle">Loading Site 1…</h3><div id="gf21BriefBody">Select Shore Fishing to calculate the current planning brief.</div></section>`;
+  page.appendChild(shore);
+  const boat=$('gf21BoatCoach'),shoreBtn=$('gf21ShoreCoach');
+  const setMode=mode=>{boat.classList.toggle('active',mode==='boat');shoreBtn.classList.toggle('active',mode==='shore');originalSections.forEach(x=>x.classList.toggle('hidden',mode==='shore'));shore.classList.toggle('hidden',mode!=='shore');if(mode==='shore')renderSessionBrief(w,d);};
+  boat.onclick=()=>setMode('boat');shoreBtn.onclick=()=>setMode('shore');
+}
+
+async function renderSessionBrief(w,d){
+  const title=d.getElementById('gf21BriefTitle'),body=d.getElementById('gf21BriefBody');if(!body)return;body.textContent='Calculating Site 1 planning hypothesis…';
+  try{
+    const date=d.getElementById('startDate')?.value||fmtDate(new Date());const hs=(d.getElementById('hours')?.value||'6,12').split(',').map(Number),sH=hs[0],eH=hs[1]||24;
+    const weather=`https://api.open-meteo.com/v1/forecast?latitude=${REGIONAL_PROXY.lat}&longitude=${REGIONAL_PROXY.lon}&hourly=wind_speed_10m,wind_gusts_10m,wind_direction_10m&wind_speed_unit=mph&timezone=America%2FLos_Angeles&start_date=${date}&end_date=${date}`;
+    const marine=`https://marine-api.open-meteo.com/v1/marine?latitude=${REGIONAL_PROXY.lat}&longitude=${REGIONAL_PROXY.lon}&hourly=wave_height,wave_period&length_unit=imperial&timezone=America%2FLos_Angeles&start_date=${date}&end_date=${date}`;
+    const tide=`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=GoFishPlanner&begin_date=${date.replaceAll('-','')}&end_date=${date.replaceAll('-','')}&datum=MLLW&station=${REGIONAL_PROXY.tide}&time_zone=lst_ldt&units=english&interval=hilo&format=json`;
+    const [wr,mr,tr]=await Promise.all([fetch(weather),fetch(marine),fetch(tide)]);const [wd,md,td]=await Promise.all([wr.json(),mr.json(),tr.json()]);
+    const rows=[];for(let i=0;i<wd.hourly.time.length;i++){const h=Number(wd.hourly.time[i].slice(11,13));const ok=sH<eH?h>=sH&&h<eH:h>=sH||h<eH;if(!ok)continue;const wind=wd.hourly.wind_speed_10m[i]||0,gust=wd.hourly.wind_gusts_10m[i]||0,wave=md.hourly.wave_height[i]||0,period=md.hourly.wave_period[i]||0;let c=100-Math.max(0,wind-9)*3.2-Math.max(0,gust-16)*1.5-Math.max(0,wave-2.5)*5-(period>=15&&wave>2?4:0);rows.push({h,wind,gust,wave,period,c:clamp(c)});}
+    rows.sort((a,b)=>b.c-a.c);const best=rows[0]||{h:sH,wind:0,gust:0,wave:0,period:0,c:50};
+    const tides=td.predictions||[],heights=tides.map(p=>Number(p.v)).filter(Number.isFinite),exchange=heights.length>=2?Math.max(...heights)-Math.min(...heights):null;
+    let opp=62;if(exchange!==null){if(exchange>=2&&exchange<=5)opp+=18;else if(exchange<1)opp-=12;else if(exchange>6)opp-=5;}opp+=best.c>=75?8:best.c<50?-8:0;opp=clamp(opp);
+    const tideText=tides.length?tides.map(p=>`${p.type==='H'?'High':'Low'} ${Number(p.v).toFixed(1)} ft @ ${new Date(p.t.replace(' ','T')).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`).join(' · '):'Tide turn data unavailable';
+    const structure=exchange!==null&&exchange>=2?'Moving water should shift fish between trough/channel and the filling or draining shelf. Verify visually on arrival.':'Weak exchange: prioritize visible current seams, deeper trough/channel water and observed bait rather than assuming shelf movement.';
+    const zone=exchange!==null&&exchange>=2?'Start lower/middle water column; expand shallow as the shelf becomes active.':'Start in the trough/channel and use suspended/baitfish signs to justify moving higher.';
+    title.textContent=`Site 1 · ${date} · ${sH===0?'12 AM':sH>12?sH-12+' PM':sH+' AM'}–${eH===24?'12 AM':eH>12?eH-12+' PM':eH+' AM'}`;
+    body.innerHTML=`<div class="gf21-row"><div><b>Conditions Score</b><div class="big">${best.c}/100</div><span class="status go">GO</span></div><div><b>Fishing Opportunity</b><div class="big">${opp}/100</div><span class="status ${opp>=76?'go':opp>=56?'caution':'nogo'}">${band(opp)}</span></div><div><b>Best forecast hour</b><div class="big">${best.h%12||12} ${best.h<12?'AM':'PM'}</div><span class="note">Starting hypothesis</span></div></div><p><b>Wind / surf influence:</b> ${best.wind.toFixed(1)} mph wind, ${best.gust.toFixed(1)} mph gusts, ${best.wave.toFixed(1)} ft outside-wave model at ${best.period.toFixed(0)} sec.</p><p><b>Tide:</b> ${tideText}${exchange===null?'':` · ${exchange.toFixed(1)} ft exchange`}.</p><p><b>Structure hypothesis:</b> ${structure}</p><p><b>Water-column starting zone:</b> ${zone}</p><p><b>Coach handoff:</b> Fishing Coach should retrieve this GoFish read, then combine it with the Fishing Repo inventory, current skill focus, recent catch logs and actual on-site observations. On-site evidence overrides this forecast hypothesis.</p>`;
+  }catch(e){body.textContent='Session Brief unavailable: '+e.message;}
+}
+</script>
+</body>
+</html>
