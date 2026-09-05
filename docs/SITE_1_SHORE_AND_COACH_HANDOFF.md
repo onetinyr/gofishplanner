@@ -1,6 +1,6 @@
 # Site 1 Shore Planner and Fishing Coach Handoff
 
-_Last updated: 2026-09-04_
+_Last updated: 2026-09-05_
 
 ## Purpose
 
@@ -77,6 +77,82 @@ The planner should derive, at minimum:
 - confidence in the read.
 
 Known Site 1 structure patterns are hypotheses to inform the planner, not guarantees. Current observations during Fishing Coach override the pre-trip hypothesis.
+
+## Site 1 Micro-Zone Map — Field Observations
+
+Fishing Coach should treat Site 1 as multiple fishable micro-zones rather than one homogeneous location. These are evolving field observations and hypotheses; future trip evidence should refine them.
+
+### Zone 1 — Shallow beach trough / shelf
+
+- At very low tide the trough can be barely covered; on a rising tide it floods before the adjacent shelf.
+- 2026-09-05 observation: larger fish did not immediately activate as the trough flooded.
+- A school of very small smelt later occupied the trough and picked shrimp from size-8 Sabiki hooks without hooking up.
+- Treat as confirmed baitfish/nursery habitat and track the water-level/current threshold at which larger fish begin using it.
+- Do not assume that rising water alone activates larger fish.
+
+### Zone 2 — Main deeper protected channel
+
+- Deeper water beyond the shallow trough/shelf.
+- Treat as potential travel/holding water and a search zone when the shallow structure is inactive.
+- Fishing Coach should deliberately compare activity here against the trough/shelf rather than repeatedly changing bait in one depth zone.
+
+### Zone 3 — Ocean/causeway transition
+
+- Ocean-facing end where incoming surf, current, and protected causeway water meet.
+- Highest observed wave/surf energy at Site 1 and a plausible food/bait transport corridor.
+- User previously caught two stingrays in this zone.
+- Classify as **high potential / high ray exposure / higher surf risk**.
+- When ray avoidance is a goal, favor safely cast moving/artificial presentations and current-seam/transition searches rather than bottom-soaked natural bait.
+- Productive fish habitat does not imply a safe wading position; use casting distance and stable footing rather than entering higher-energy water.
+
+### Zone 4 — Offshore shallow sand flat / drop-off
+
+- A shallow sandy feature is visible at low tide by a distinct water-color change near the jetty.
+- Working hypothesis: shallow sand flat/shelf transitions through a trough or drop-off into deeper water.
+- Potential feeding/ambush edge where shallow sand, deeper water, and nearby hard structure meet.
+- It is a **long-cast target** from the normal shoreline position. Future gear/presentation planning should account for reach rather than assuming standard close-range tackle can cover it.
+- Future low-tide observation and/or sonar mapping should refine the exact geometry.
+
+### Zone 5 — Protected/opposite jetty end
+
+- Much calmer, backwater-like water with a broad sandy shoreline compared with the ocean-facing transition.
+- Productivity and bottom structure are not yet established.
+- Future exploration should specifically look for a channel edge, current seam, eddy, or flow wrapping around the end of the jetty.
+- Good candidate for systematic Deeper sonar casts because of the calmer protected water.
+
+## Mussel / Food-Source Observation
+
+Site 1 repeatedly receives mussels and mussel debris on the beach. On 2026-09-05, whole/clumped mussels and numerous broken/open empty shells were observed.
+
+Working model:
+
+1. Mussels grow on nearby hard jetty/rock structure.
+2. Surge/waves/current mechanically dislodge whole mussels or clusters.
+3. Transport through rocks/surf can fracture shells.
+4. Exposed mussel meat is rapidly scavenged, leaving broken/open shells without meat.
+
+Fishing implications:
+
+- Treat mussel as a highly locally relevant natural bait for Site 1.
+- Track whether stronger surf produces more fresh broken mussels and whether that correlates with croaker or other bottom-feeder activity.
+- Do not assume broken shells alone prove that fish or another predator cracked the mussels open; mechanical damage followed by scavenging remains the primary working hypothesis.
+
+## Site-Detail Learning Rule
+
+Fishing Coach should continuously build this micro-zone map from pre/during/post trip evidence. Record meaningful observations by zone, including:
+
+- tide height/stage and approximate water coverage;
+- current strength/direction;
+- surf influence;
+- baitfish presence/behavior;
+- mussel/food-source activity;
+- bites/catches and species;
+- ray encounters;
+- productive/unproductive bait, lure, depth, and presentation;
+- safe practical casting positions;
+- structure changes visible at unusually low tides.
+
+The long-term objective is to progress from generic Site 1 advice toward conditional recommendations such as: **given today's tide/current/surf/bait activity, begin in Zone X with approach Y, then move to Zone Z when condition A occurs.**
 
 ## Site 1 Recommendation Output
 
